@@ -35,7 +35,7 @@ export default function LoginScreen() {
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.hero}>
         <Text style={styles.brand}>호랭마켓</Text>
-        <Text style={styles.subtitle}>고려대학교 학생만을 위한 생활형 로컬 커뮤니티</Text>
+        <Text style={styles.subtitle}>고려대학교 학생들을 위한 생활형 로컬 커뮤니티</Text>
       </View>
 
       <View style={styles.formCard}>
@@ -89,6 +89,7 @@ const styles = StyleSheet.create({
     gap: spacing.xl,
   },
   hero: {
+    alignItems: 'center',
     gap: 10,
   },
   brand: {

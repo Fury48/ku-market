@@ -4,7 +4,7 @@ import { palette } from '@/lib/theme';
 import { useAuth } from '@/providers/auth-provider';
 
 export default function IndexScreen() {
-  const { ready, user } = useAuth();
+  const { ready, user } = useAuth(); 
 
   if (!ready) {
     return (
