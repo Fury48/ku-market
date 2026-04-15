@@ -5,9 +5,9 @@
     "posts": 16,
     "postImages": 17,
     "postLikes": 9,
-    "comments": 10,
+    "comments": 11,
     "chatRooms": 3,
-    "messages": 8
+    "messages": 9
   },
   "users": [
     {
@@ -395,7 +395,7 @@
         "#큐티보이"
       ],
       "created_at": "2026-04-11T15:56:27.586Z",
-      "updated_at": "2026-04-11T15:57:19.403Z"
+      "updated_at": "2026-04-15T06:59:16.528Z"
     },
     {
       "id": 15,
@@ -625,6 +625,13 @@
       "user_id": 1,
       "content": "니네 축구 존나 못하자나 ㅋㅋㅋㅋ",
       "created_at": "2026-04-15T06:39:19.375Z"
+    },
+    {
+      "id": 10,
+      "post_id": 14,
+      "user_id": 4,
+      "content": "저요 저",
+      "created_at": "2026-04-15T06:59:16.527Z"
     }
   ],
   "chat_rooms": [
@@ -796,7 +803,8 @@
           "manner_score": 41.2,
           "profile_image_url": "data:image/svg+xml;utf8,%0A%20%20%20%20%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22256%22%20height%3D%22256%22%20viewBox%3D%220%200%20256%20256%22%3E%0A%20%20%20%20%20%20%3Crect%20width%3D%22256%22%20height%3D%22256%22%20rx%3D%22128%22%20fill%3D%22%23F6E3E7%22%20%2F%3E%0A%20%20%20%20%20%20%3Ccircle%20cx%3D%22128%22%20cy%3D%22128%22%20r%3D%22112%22%20fill%3D%22%237A2338%22%20opacity%3D%220.12%22%20%2F%3E%0A%20%20%20%20%20%20%3Ctext%20x%3D%22128%22%20y%3D%22146%22%20text-anchor%3D%22middle%22%20fill%3D%22%237A2338%22%20font-family%3D%22Arial%2C%20Helvetica%2C%20sans-serif%22%20font-size%3D%2288%22%20font-weight%3D%22700%22%3E%ED%98%B8%3C%2Ftext%3E%0A%20%20%20%20%3C%2Fsvg%3E",
           "created_at": "2026-03-17T15:55:20.153Z"
-        }
+        },
+        4
       ],
       "created_at": "2026-04-11T07:55:20.153Z"
     },
@@ -818,9 +826,22 @@
       "content": "아니요",
       "image_url": null,
       "read_by": [
-        1
+        1,
+        4
       ],
       "created_at": "2026-04-12T07:29:58.854Z"
+    },
+    {
+      "id": 8,
+      "room_id": 2,
+      "sender_id": 4,
+      "content": "그럼 꺼져",
+      "image_url": null,
+      "read_by": [
+        4,
+        1
+      ],
+      "created_at": "2026-04-15T06:58:58.452Z"
     }
   ],
   "sessions": [
@@ -835,12 +856,6 @@
       "user_id": 1,
       "persisted": true,
       "expires_at": "2026-05-12T07:29:06.334Z"
-    },
-    {
-      "token": "b469a2df4939c3d737a5b853942405904de7690428d0579b",
-      "user_id": 1,
-      "persisted": true,
-      "expires_at": "2026-05-15T06:53:59.851Z"
     }
   ],
   "verification_codes": [

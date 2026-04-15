@@ -215,10 +215,6 @@ export default function PostDetailScreen() {
                   {post.author.department} {post.author.studentYear}학년
                 </Text>
               </View>
-              <View style={styles.mannerBox}>
-                <Text style={styles.mannerValue}>{post.author.mannerScore.toFixed(1)}°</Text>
-                <Text style={styles.mannerLabel}>매너온도</Text>
-              </View>
             </View>
 
             <View style={styles.section}>

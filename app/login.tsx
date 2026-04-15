@@ -91,8 +91,8 @@ const styles = StyleSheet.create({
     gap: spacing.xl,
   },
    logo: {
-    width: 150,  // 이미지 너비 조정
-    height: 150,  // 이미지 높이 조정
+    width: 100,  // 이미지 너비 조정
+    height: 100,  // 이미지 높이 조정
     marginBottom: 0,  //미지와 텍스트 간격 조정
   },
   hero: {
