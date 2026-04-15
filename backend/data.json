@@ -835,6 +835,12 @@
       "user_id": 1,
       "persisted": true,
       "expires_at": "2026-05-12T07:29:06.334Z"
+    },
+    {
+      "token": "b469a2df4939c3d737a5b853942405904de7690428d0579b",
+      "user_id": 1,
+      "persisted": true,
+      "expires_at": "2026-05-15T06:53:59.851Z"
     }
   ],
   "verification_codes": [

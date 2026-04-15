@@ -36,7 +36,7 @@ export default function LoginScreen() {
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.hero}>
         <Image source={require('../assets/images/tenrang1.png')} style={styles.logo} />
-        <Text style={styles.brand}>호랭마켓</Text>
+        <Text style={styles.brand}>KU-L거래</Text>
         <Text style={styles.subtitle}>고려대학교 학생들을 위한 생활형 로컬 커뮤니티</Text>
       </View>
 
