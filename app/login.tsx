@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { Alert, Pressable, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, Switch, Text, Image ,TextInput, View } from 'react-native';
 import { Link, type Href, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { masterAccount } from '@/lib/constants';
 import { palette, radius, spacing } from '@/lib/theme';
 import { useAuth } from '@/providers/auth-provider';
+
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -34,6 +35,7 @@ export default function LoginScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.hero}>
+        <Image source={require('../assets/images/tenrang1.png')} style={styles.logo} />
         <Text style={styles.brand}>호랭마켓</Text>
         <Text style={styles.subtitle}>고려대학교 학생들을 위한 생활형 로컬 커뮤니티</Text>
       </View>
@@ -87,6 +89,11 @@ const styles = StyleSheet.create({
     padding: spacing.xl,
     justifyContent: 'center',
     gap: spacing.xl,
+  },
+   logo: {
+    width: 150,  // 이미지 너비 조정
+    height: 150,  // 이미지 높이 조정
+    marginBottom: 0,  //미지와 텍스트 간격 조정
   },
   hero: {
     alignItems: 'center',

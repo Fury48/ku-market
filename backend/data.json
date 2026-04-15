@@ -5,7 +5,7 @@
     "posts": 16,
     "postImages": 17,
     "postLikes": 9,
-    "comments": 7,
+    "comments": 10,
     "chatRooms": 3,
     "messages": 8
   },
@@ -220,7 +220,7 @@
         "운동"
       ],
       "created_at": "2026-04-10T13:55:20.153Z",
-      "updated_at": "2026-04-10T13:55:20.153Z"
+      "updated_at": "2026-04-15T06:39:19.375Z"
     },
     {
       "id": 7,
@@ -417,7 +417,7 @@
         "밤밤티"
       ],
       "created_at": "2026-04-12T07:30:56.790Z",
-      "updated_at": "2026-04-12T07:31:08.790Z"
+      "updated_at": "2026-04-15T06:38:26.146Z"
     }
   ],
   "post_images": [
@@ -604,6 +604,27 @@
       "user_id": 1,
       "content": "안사요",
       "created_at": "2026-04-12T07:31:08.790Z"
+    },
+    {
+      "id": 7,
+      "post_id": 15,
+      "user_id": 1,
+      "content": "jaskjdasd",
+      "created_at": "2026-04-15T06:38:16.253Z"
+    },
+    {
+      "id": 8,
+      "post_id": 15,
+      "user_id": 1,
+      "content": "존나 못생겼누 ㅋㅋㅋㅋ",
+      "created_at": "2026-04-15T06:38:26.146Z"
+    },
+    {
+      "id": 9,
+      "post_id": 6,
+      "user_id": 1,
+      "content": "니네 축구 존나 못하자나 ㅋㅋㅋㅋ",
+      "created_at": "2026-04-15T06:39:19.375Z"
     }
   ],
   "chat_rooms": [
