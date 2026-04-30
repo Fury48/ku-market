@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View, useWindowDimensions } from 'react-native';
+import { Alert, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View, useWindowDimensions } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { type Href, useLocalSearchParams, useRouter } from 'expo-router';
@@ -21,11 +21,12 @@ export default function PostDetailScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ id?: string | string[] }>();
   const postId = pickParam(params.id);
-  const { width } = useWindowDimensions();
+  const { width, height } = useWindowDimensions();
   const [post, setPost] = useState<PostDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [comment, setComment] = useState('');
   const [commenting, setCommenting] = useState(false);
+  const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
 
   const loadPost = useCallback(async () => {
     if (!postId) {
@@ -179,7 +180,12 @@ export default function PostDetailScreen() {
             <View style={styles.hero}>
               <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false}>
                 {post.images.map((uri, index) => (
-                  <Image key={`${uri}-${index}`} source={{ uri }} style={[styles.heroImage, { width }]} contentFit="cover" />
+                  <Pressable
+                    key={`${uri}-${index}`}
+                    onPress={() => setSelectedImageIndex(index)}
+                    style={[styles.heroImageButton, { width }]}>
+                    <Image source={{ uri }} style={styles.heroImage} contentFit="contain" />
+                  </Pressable>
                 ))}
               </ScrollView>
 
@@ -270,6 +276,40 @@ export default function PostDetailScreen() {
               <Text style={styles.chatButtonText}>채팅하기</Text>
             </Pressable>
           </View>
+
+          <Modal
+            visible={selectedImageIndex !== null}
+            transparent
+            animationType="fade"
+            onRequestClose={() => setSelectedImageIndex(null)}>
+            <View style={styles.imageModal}>
+              <View style={styles.imageModalHeader}>
+                <Text style={styles.imageModalCounter}>
+                  {(selectedImageIndex ?? 0) + 1} / {post.images.length}
+                </Text>
+                <Pressable onPress={() => setSelectedImageIndex(null)} style={styles.imageModalCloseButton}>
+                  <Ionicons name="close" size={24} color={palette.white} />
+                </Pressable>
+              </View>
+
+              <ScrollView
+                key={selectedImageIndex ?? 0}
+                horizontal
+                pagingEnabled
+                showsHorizontalScrollIndicator={false}
+                contentOffset={{ x: (selectedImageIndex ?? 0) * width, y: 0 }}>
+                {post.images.map((uri, index) => (
+                  <View key={`modal-${uri}-${index}`} style={[styles.imageModalPage, { width }]}>
+                    <Image
+                      source={{ uri }}
+                      style={[styles.imageModalImage, { width, height: Math.max(1, height - 96) }]}
+                      contentFit="contain"
+                    />
+                  </View>
+                ))}
+              </ScrollView>
+            </View>
+          </Modal>
         </>
       )}
     </SafeAreaView>
@@ -297,7 +337,12 @@ const styles = StyleSheet.create({
     position: 'relative',
     backgroundColor: palette.creamStrong,
   },
+  heroImageButton: {
+    height: 300,
+    backgroundColor: palette.creamStrong,
+  },
   heroImage: {
+    width: '100%',
     height: 300,
     backgroundColor: palette.creamStrong,
   },
@@ -485,5 +530,37 @@ const styles = StyleSheet.create({
     color: palette.white,
     fontSize: 15,
     fontWeight: '800',
+  },
+  imageModal: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.96)',
+  },
+  imageModalHeader: {
+    height: 96,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.xl,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  imageModalCounter: {
+    color: palette.white,
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  imageModalCloseButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.16)',
+  },
+  imageModalPage: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  imageModalImage: {
+    backgroundColor: 'transparent',
   },
 });

@@ -17,7 +17,7 @@ export function PostCard({ post, onPress }: PostCardProps) {
 
   return (
     <Pressable onPress={onPress} style={({ pressed }) => [styles.card, pressed && styles.pressed]}>
-      <Image source={{ uri: post.coverImageUrl }} style={styles.image} contentFit="cover" />
+      <Image source={{ uri: post.coverImageUrl }} style={styles.image} contentFit="contain" />
       <View style={styles.content}>
         <View style={styles.topRow}>
           <Pill label={categoryLabels[post.category]} toned="soft" />
@@ -72,6 +72,8 @@ const styles = StyleSheet.create({
     height: 104,
     borderRadius: radius.md,
     backgroundColor: palette.creamStrong,
+    borderWidth: 1,
+    borderColor: palette.border,
   },
   content: {
     flex: 1,
