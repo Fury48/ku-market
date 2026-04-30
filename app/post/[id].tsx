@@ -1,5 +1,17 @@
 import { useCallback, useState } from 'react';
-import { Alert, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View, useWindowDimensions } from 'react-native';
+import {
+  Alert,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+  useWindowDimensions,
+} from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { type Href, useLocalSearchParams, useRouter } from 'expo-router';
@@ -12,6 +24,7 @@ import { palette, radius, spacing } from '@/lib/theme';
 import { PostDetail } from '@/types/models';
 import { Avatar } from '@/components/ui/avatar';
 import { Pill } from '@/components/ui/pill';
+import { useKeyboardOffset } from '@/hooks/use-keyboard-offset';
 
 function pickParam(value?: string | string[]) {
   return Array.isArray(value) ? value[0] : value;
@@ -27,6 +40,7 @@ export default function PostDetailScreen() {
   const [comment, setComment] = useState('');
   const [commenting, setCommenting] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
+  const keyboardOffset = useKeyboardOffset();
 
   const loadPost = useCallback(async () => {
     if (!postId) {
@@ -166,6 +180,10 @@ export default function PostDetailScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={0}
+        style={styles.keyboardAvoider}>
       {loading ? (
         <View style={styles.loadingWrap}>
           <Text style={styles.loadingText}>게시글을 불러오는 중...</Text>
@@ -176,7 +194,10 @@ export default function PostDetailScreen() {
         </View>
       ) : (
         <>
-          <ScrollView contentContainerStyle={styles.scrollContent}>
+          <ScrollView
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="interactive"
+            contentContainerStyle={[styles.scrollContent, { paddingBottom: 120 + keyboardOffset }]}>
             <View style={styles.hero}>
               <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false}>
                 {post.images.map((uri, index) => (
@@ -264,7 +285,7 @@ export default function PostDetailScreen() {
             </View>
           </ScrollView>
 
-          <View style={styles.actionBar}>
+          <View style={[styles.actionBar, { transform: [{ translateY: -keyboardOffset }] }]}>
             <View style={styles.actionLeft}>
               <Pressable onPress={handleLike} style={styles.likeButton}>
                 <Ionicons name={post.isLiked ? 'heart' : 'heart-outline'} size={18} color={post.isLiked ? palette.burgundy : palette.ink} />
@@ -312,6 +333,7 @@ export default function PostDetailScreen() {
           </Modal>
         </>
       )}
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -320,6 +342,9 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: palette.cream,
+  },
+  keyboardAvoider: {
+    flex: 1,
   },
   loadingWrap: {
     flex: 1,

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { type Href, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -7,6 +7,7 @@ import { apiFetch } from '@/lib/api';
 import { pickImages } from '@/lib/image-picker';
 import { palette, radius, spacing } from '@/lib/theme';
 import { useAuth } from '@/providers/auth-provider';
+import { useKeyboardOffset } from '@/hooks/use-keyboard-offset';
 
 export default function RegisterScreen() {
   const router = useRouter();
@@ -23,6 +24,7 @@ export default function RegisterScreen() {
   const [studentYear, setStudentYear] = useState('2');
   const [profileImageUrl, setProfileImageUrl] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const keyboardOffset = useKeyboardOffset();
 
   const emailValid = useMemo(() => /@korea\.ac\.kr$/i.test(email.trim()), [email]);
 
@@ -128,7 +130,14 @@ export default function RegisterScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView contentContainerStyle={styles.container}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={0}
+        style={styles.keyboardAvoider}>
+      <ScrollView
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
+        contentContainerStyle={[styles.container, { paddingBottom: spacing.xxl + keyboardOffset }]}>
         <Pressable onPress={() => router.back()} style={styles.backRow}>
           <Ionicons name="chevron-back" size={20} color={palette.ink} />
           <Text style={styles.backText}>뒤로</Text>
@@ -186,6 +195,7 @@ export default function RegisterScreen() {
           <Text style={styles.primaryButtonText}>{submitting ? '가입 중...' : '회원가입'}</Text>
         </Pressable>
       </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -229,6 +239,9 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: palette.cream,
+  },
+  keyboardAvoider: {
+    flex: 1,
   },
   container: {
     padding: spacing.xl,

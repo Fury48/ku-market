@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -9,6 +9,7 @@ import { palette, radius, spacing } from '@/lib/theme';
 import { useAuth } from '@/providers/auth-provider';
 import { UserSummary } from '@/types/models';
 import { Avatar } from '@/components/ui/avatar';
+import { useKeyboardOffset } from '@/hooks/use-keyboard-offset';
 
 export default function EditProfileScreen() {
   const router = useRouter();
@@ -19,6 +20,7 @@ export default function EditProfileScreen() {
   const [bio, setBio] = useState(user?.bio ?? '');
   const [profileImageUrl, setProfileImageUrl] = useState(user?.profileImageUrl ?? '');
   const [saving, setSaving] = useState(false);
+  const keyboardOffset = useKeyboardOffset();
 
   if (!user) {
     return null;
@@ -61,7 +63,14 @@ export default function EditProfileScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView contentContainerStyle={styles.container}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={0}
+        style={styles.keyboardAvoider}>
+      <ScrollView
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
+        contentContainerStyle={[styles.container, { paddingBottom: spacing.xxl + keyboardOffset }]}>
         <View style={styles.header}>
           <Pressable onPress={() => router.back()} style={styles.backButton}>
             <Ionicons name="chevron-back" size={22} color={palette.ink} />
@@ -88,6 +97,7 @@ export default function EditProfileScreen() {
           <Text style={styles.saveButtonText}>{saving ? '저장 중...' : '저장하기'}</Text>
         </Pressable>
       </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -124,6 +134,9 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: palette.cream,
+  },
+  keyboardAvoider: {
+    flex: 1,
   },
   container: {
     padding: spacing.lg,

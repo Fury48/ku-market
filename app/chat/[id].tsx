@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { type Href, useLocalSearchParams, useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
@@ -83,6 +83,10 @@ export default function ChatDetailScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={0}
+        style={styles.keyboardAvoider}>
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} style={styles.iconButton}>
           <Ionicons name="chevron-back" size={22} color={palette.ink} />
@@ -112,7 +116,11 @@ export default function ChatDetailScreen() {
         </View>
       ) : null}
 
-      <ScrollView contentContainerStyle={styles.messagesWrap}>
+      <ScrollView
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
+        style={styles.messagesList}
+        contentContainerStyle={styles.messagesWrap}>
         {loading ? <Text style={styles.helperText}>채팅을 불러오는 중...</Text> : null}
         {!loading && !room ? <Text style={styles.helperText}>채팅방을 찾을 수 없습니다.</Text> : null}
         {room?.messages.map((item) => <MessageBubble key={item.id} message={item} />)}
@@ -134,6 +142,7 @@ export default function ChatDetailScreen() {
           <Text style={styles.sendButtonText}>{sending ? '전송중' : '보내기'}</Text>
         </Pressable>
       </View>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -142,6 +151,9 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: palette.cream,
+  },
+  keyboardAvoider: {
+    flex: 1,
   },
   header: {
     flexDirection: 'row',
@@ -201,6 +213,9 @@ const styles = StyleSheet.create({
   messagesWrap: {
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.xl,
+  },
+  messagesList: {
+    flex: 1,
   },
   helperText: {
     color: palette.muted,

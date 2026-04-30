@@ -898,16 +898,16 @@
       "expires_at": "2026-05-15T09:32:11.177Z"
     },
     {
-      "token": "590ac436c558b47adec7875ac63e8915de1b2713da54c0d4",
-      "user_id": 1,
-      "persisted": true,
-      "expires_at": "2026-05-30T07:43:13.776Z"
-    },
-    {
       "token": "06005ee71e0e4eedca505c7b435db670b001e9660f701919",
       "user_id": 1,
       "persisted": true,
       "expires_at": "2026-05-30T07:43:44.302Z"
+    },
+    {
+      "token": "57aba4ad4f7e14f8d58459c94eb1057b2bb39dc49f64f849",
+      "user_id": 1,
+      "persisted": true,
+      "expires_at": "2026-05-30T07:57:33.174Z"
     }
   ],
   "verification_codes": [

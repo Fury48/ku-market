@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { type Href, useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -7,6 +7,7 @@ import { apiFetch } from '@/lib/api';
 import { palette, spacing } from '@/lib/theme';
 import { BoardType, PostDetail, PostUpsertPayload } from '@/types/models';
 import { PostForm } from '@/components/post-form';
+import { useKeyboardOffset } from '@/hooks/use-keyboard-offset';
 
 function pickParam(value?: string | string[]) {
   return Array.isArray(value) ? value[0] : value;
@@ -28,6 +29,7 @@ export default function ComposePostScreen() {
   const [post, setPost] = useState<PostDetail | null>(null);
   const [loading, setLoading] = useState(Boolean(postId));
   const [submitting, setSubmitting] = useState(false);
+  const keyboardOffset = useKeyboardOffset();
 
   useEffect(() => {
     if (!postId) {
@@ -72,6 +74,10 @@ export default function ComposePostScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={0}
+        style={styles.keyboardAvoider}>
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="chevron-back" size={22} color={palette.ink} />
@@ -82,10 +88,14 @@ export default function ComposePostScreen() {
         </View>
       </View>
 
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
+        contentContainerStyle={[styles.content, { paddingBottom: spacing.xxl + keyboardOffset }]}>
         {loading ? <Text style={styles.loadingText}>게시글 정보를 불러오는 중...</Text> : null}
         {!loading ? <PostForm board={board} initialPost={post} submitting={submitting} onSubmit={handleSubmit} /> : null}
       </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -94,6 +104,9 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: palette.cream,
+  },
+  keyboardAvoider: {
+    flex: 1,
   },
   header: {
     flexDirection: 'row',
