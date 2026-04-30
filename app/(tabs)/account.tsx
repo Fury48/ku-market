@@ -178,8 +178,8 @@ const styles = StyleSheet.create({
   logoutButton: {
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: '#F0C7CF',
-    backgroundColor: '#FFF1F3',
+    borderColor: '#70424D',
+    backgroundColor: '#3A242B',
     paddingVertical: 16,
     alignItems: 'center',
   },

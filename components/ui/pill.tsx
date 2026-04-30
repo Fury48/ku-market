@@ -37,8 +37,8 @@ const styles = StyleSheet.create({
     backgroundColor: palette.creamStrong,
   },
   danger: {
-    backgroundColor: '#FFF1F3',
-    borderColor: '#F0C7CF',
+    backgroundColor: '#3A242B',
+    borderColor: '#70424D',
   },
   active: {
     backgroundColor: palette.burgundy,

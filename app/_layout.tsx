@@ -32,7 +32,7 @@ export default function RootLayout() {
           <Stack.Screen name="account/mine" />
           <Stack.Screen name="account/edit" />
         </Stack>
-        <StatusBar style="dark" />
+        <StatusBar style="light" />
       </ThemeProvider>
     </AuthProvider>
   );

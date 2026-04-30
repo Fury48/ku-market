@@ -101,10 +101,10 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   alertCard: {
-    backgroundColor: '#FFF6EA',
+    backgroundColor: '#2F2A20',
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: '#F2D6A4',
+    borderColor: '#5A4B2E',
     padding: spacing.md,
     marginBottom: spacing.lg,
     flexDirection: 'row',

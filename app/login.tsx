@@ -156,8 +156,8 @@ const styles = StyleSheet.create({
   masterCard: {
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: '#E7D3C0',
-    backgroundColor: '#FFF8EE',
+    borderColor: '#4B453D',
+    backgroundColor: '#27251F',
     padding: spacing.lg,
     gap: 4,
   },

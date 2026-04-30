@@ -286,7 +286,7 @@ const styles = StyleSheet.create({
     color: palette.ink,
   },
   inputDisabled: {
-    backgroundColor: '#F1EBE5',
+    backgroundColor: '#1E2025',
     color: palette.muted,
   },
   secondaryButton: {

@@ -227,7 +227,7 @@ export function PostForm({ board, submitting, initialPost, onSubmit }: PostFormP
             <Switch
               value={isPriceOfferAllowed}
               onValueChange={setIsPriceOfferAllowed}
-              trackColor={{ false: '#D7CCC4', true: palette.burgundy }}
+              trackColor={{ false: palette.border, true: palette.burgundy }}
             />
           </View>
         </>
