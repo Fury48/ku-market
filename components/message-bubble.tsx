@@ -1,8 +1,7 @@
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { Modal, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
-import { useState } from 'react';
-import { formatRelativeTime } from '@/lib/format';
+import { memo, useState } from 'react';
 import { palette, radius, spacing } from '@/lib/theme';
 import { ChatMessage } from '@/types/models';
 
@@ -10,7 +9,7 @@ type MessageBubbleProps = {
   message: ChatMessage;
 };
 
-export function MessageBubble({ message }: MessageBubbleProps) {
+export const MessageBubble = memo(function MessageBubble({ message }: MessageBubbleProps) {
   const { width, height } = useWindowDimensions();
   const [isImageOpen, setIsImageOpen] = useState(false);
 
@@ -42,10 +41,9 @@ export function MessageBubble({ message }: MessageBubbleProps) {
           </>
         ) : null}
       </View>
-      <Text style={styles.time}>{formatRelativeTime(message.createdAt)}</Text>
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   wrap: {
@@ -110,10 +108,5 @@ const styles = StyleSheet.create({
   },
   imageModalImage: {
     backgroundColor: 'transparent',
-  },
-  time: {
-    color: palette.muted,
-    fontSize: 11,
-    marginTop: 4,
   },
 });

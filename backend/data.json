@@ -6,8 +6,8 @@
     "postImages": 23,
     "postLikes": 9,
     "comments": 15,
-    "chatRooms": 4,
-    "messages": 51
+    "chatRooms": 6,
+    "messages": 163
   },
   "users": [
     {
@@ -760,6 +760,20 @@
       "seller_id": 1,
       "buyer_id": 7,
       "created_at": "2026-04-30T08:19:11.795Z"
+    },
+    {
+      "id": 4,
+      "post_id": 15,
+      "seller_id": 1,
+      "buyer_id": 7,
+      "created_at": "2026-05-07T08:14:52.835Z"
+    },
+    {
+      "id": 5,
+      "post_id": 1,
+      "seller_id": 2,
+      "buyer_id": 7,
+      "created_at": "2026-05-07T08:22:48.176Z"
     }
   ],
   "messages": [
@@ -1458,6 +1472,1407 @@
         1
       ],
       "created_at": "2026-05-07T07:43:07.239Z"
+    },
+    {
+      "id": 51,
+      "room_id": 3,
+      "sender_id": 7,
+      "content": "채팅 테스트",
+      "image_url": null,
+      "read_by": [
+        7,
+        1
+      ],
+      "created_at": "2026-05-07T07:44:05.688Z"
+    },
+    {
+      "id": 52,
+      "room_id": 3,
+      "sender_id": 7,
+      "content": "아",
+      "image_url": null,
+      "read_by": [
+        7,
+        1
+      ],
+      "created_at": "2026-05-07T07:47:50.098Z"
+    },
+    {
+      "id": 53,
+      "room_id": 3,
+      "sender_id": 7,
+      "content": "아",
+      "image_url": null,
+      "read_by": [
+        7,
+        1
+      ],
+      "created_at": "2026-05-07T07:47:50.748Z"
+    },
+    {
+      "id": 54,
+      "room_id": 3,
+      "sender_id": 7,
+      "content": "아",
+      "image_url": null,
+      "read_by": [
+        7,
+        1
+      ],
+      "created_at": "2026-05-07T07:48:04.211Z"
+    },
+    {
+      "id": 55,
+      "room_id": 3,
+      "sender_id": 7,
+      "content": "아",
+      "image_url": null,
+      "read_by": [
+        7,
+        1
+      ],
+      "created_at": "2026-05-07T07:48:05.340Z"
+    },
+    {
+      "id": 56,
+      "room_id": 3,
+      "sender_id": 7,
+      "content": "섹스",
+      "image_url": null,
+      "read_by": [
+        7,
+        1
+      ],
+      "created_at": "2026-05-07T07:48:13.038Z"
+    },
+    {
+      "id": 57,
+      "room_id": 3,
+      "sender_id": 7,
+      "content": "근데",
+      "image_url": null,
+      "read_by": [
+        7,
+        1
+      ],
+      "created_at": "2026-05-07T07:48:17.587Z"
+    },
+    {
+      "id": 58,
+      "room_id": 3,
+      "sender_id": 1,
+      "content": "ㄱㄱ?",
+      "image_url": null,
+      "read_by": [
+        1,
+        7
+      ],
+      "created_at": "2026-05-07T07:48:20.100Z"
+    },
+    {
+      "id": 59,
+      "room_id": 3,
+      "sender_id": 1,
+      "content": "ㄱㄱ?",
+      "image_url": null,
+      "read_by": [
+        1,
+        7
+      ],
+      "created_at": "2026-05-07T07:48:20.728Z"
+    },
+    {
+      "id": 60,
+      "room_id": 3,
+      "sender_id": 7,
+      "content": "채팅이 여전히 느림",
+      "image_url": null,
+      "read_by": [
+        7,
+        1
+      ],
+      "created_at": "2026-05-07T07:48:25.286Z"
+    },
+    {
+      "id": 61,
+      "room_id": 3,
+      "sender_id": 1,
+      "content": "맞긴해",
+      "image_url": null,
+      "read_by": [
+        1,
+        7
+      ],
+      "created_at": "2026-05-07T07:48:31.820Z"
+    },
+    {
+      "id": 62,
+      "room_id": 3,
+      "sender_id": 1,
+      "content": "흠",
+      "image_url": null,
+      "read_by": [
+        1,
+        7
+      ],
+      "created_at": "2026-05-07T07:48:39.774Z"
+    },
+    {
+      "id": 63,
+      "room_id": 3,
+      "sender_id": 1,
+      "content": "일단",
+      "image_url": null,
+      "read_by": [
+        1,
+        7
+      ],
+      "created_at": "2026-05-07T07:48:49.825Z"
+    },
+    {
+      "id": 64,
+      "room_id": 3,
+      "sender_id": 1,
+      "content": "깃에 저장하고",
+      "image_url": null,
+      "read_by": [
+        1,
+        7
+      ],
+      "created_at": "2026-05-07T07:48:56.858Z"
+    },
+    {
+      "id": 65,
+      "room_id": 3,
+      "sender_id": 1,
+      "content": "한번더 수@정해달라 얘기해보고",
+      "image_url": null,
+      "read_by": [
+        1,
+        7
+      ],
+      "created_at": "2026-05-07T07:49:12.558Z"
+    },
+    {
+      "id": 66,
+      "room_id": 3,
+      "sender_id": 7,
+      "content": "오..",
+      "image_url": null,
+      "read_by": [
+        7,
+        1
+      ],
+      "created_at": "2026-05-07T07:49:18.067Z"
+    },
+    {
+      "id": 67,
+      "room_id": 3,
+      "sender_id": 1,
+      "content": "안되면 그냥 이메일하는걸로 ㄱㄱ",
+      "image_url": null,
+      "read_by": [
+        1,
+        7
+      ],
+      "created_at": "2026-05-07T07:49:24.568Z"
+    },
+    {
+      "id": 68,
+      "room_id": 3,
+      "sender_id": 7,
+      "content": "추가로",
+      "image_url": null,
+      "read_by": [
+        7,
+        1
+      ],
+      "created_at": "2026-05-07T07:49:24.692Z"
+    },
+    {
+      "id": 69,
+      "room_id": 3,
+      "sender_id": 7,
+      "content": "누가 내 게시글에 댓글 달면",
+      "image_url": null,
+      "read_by": [
+        7,
+        1
+      ],
+      "created_at": "2026-05-07T07:49:33.796Z"
+    },
+    {
+      "id": 70,
+      "room_id": 3,
+      "sender_id": 7,
+      "content": "알려주는 기능도 있으면 좋을 듯",
+      "image_url": null,
+      "read_by": [
+        7,
+        1
+      ],
+      "created_at": "2026-05-07T07:49:44.092Z"
+    },
+    {
+      "id": 71,
+      "room_id": 3,
+      "sender_id": 1,
+      "content": "알람기능도 만들어야겠다",
+      "image_url": null,
+      "read_by": [
+        1,
+        7
+      ],
+      "created_at": "2026-05-07T07:49:56.940Z"
+    },
+    {
+      "id": 72,
+      "room_id": 2,
+      "sender_id": 1,
+      "content": "야",
+      "image_url": null,
+      "read_by": [
+        1
+      ],
+      "created_at": "2026-05-07T07:52:30.793Z"
+    },
+    {
+      "id": 73,
+      "room_id": 3,
+      "sender_id": 1,
+      "content": "대머리깎아라",
+      "image_url": null,
+      "read_by": [
+        1,
+        7
+      ],
+      "created_at": "2026-05-07T07:52:41.897Z"
+    },
+    {
+      "id": 74,
+      "room_id": 3,
+      "sender_id": 1,
+      "content": "대머리깎아라",
+      "image_url": null,
+      "read_by": [
+        1,
+        7
+      ],
+      "created_at": "2026-05-07T07:52:42.997Z"
+    },
+    {
+      "id": 75,
+      "room_id": 3,
+      "sender_id": 1,
+      "content": "야",
+      "image_url": null,
+      "read_by": [
+        1,
+        7
+      ],
+      "created_at": "2026-05-07T07:53:50.877Z"
+    },
+    {
+      "id": 76,
+      "room_id": 3,
+      "sender_id": 7,
+      "content": "대머리는",
+      "image_url": null,
+      "read_by": [
+        7,
+        1
+      ],
+      "created_at": "2026-05-07T07:53:56.073Z"
+    },
+    {
+      "id": 77,
+      "room_id": 3,
+      "sender_id": 1,
+      "content": "야",
+      "image_url": null,
+      "read_by": [
+        1,
+        7
+      ],
+      "created_at": "2026-05-07T07:53:58.295Z"
+    },
+    {
+      "id": 78,
+      "room_id": 3,
+      "sender_id": 1,
+      "content": "근데 이게",
+      "image_url": null,
+      "read_by": [
+        1,
+        7
+      ],
+      "created_at": "2026-05-07T07:54:04.434Z"
+    },
+    {
+      "id": 79,
+      "room_id": 3,
+      "sender_id": 7,
+      "content": "깎을 머리가 없음",
+      "image_url": null,
+      "read_by": [
+        7,
+        1
+      ],
+      "created_at": "2026-05-07T07:54:05.334Z"
+    },
+    {
+      "id": 80,
+      "room_id": 3,
+      "sender_id": 1,
+      "content": "보니까",
+      "image_url": null,
+      "read_by": [
+        1,
+        7
+      ],
+      "created_at": "2026-05-07T07:54:11.563Z"
+    },
+    {
+      "id": 81,
+      "room_id": 3,
+      "sender_id": 7,
+      "content": "뭐야 이거",
+      "image_url": null,
+      "read_by": [
+        7,
+        1
+      ],
+      "created_at": "2026-05-07T07:54:13.463Z"
+    },
+    {
+      "id": 82,
+      "room_id": 3,
+      "sender_id": 1,
+      "content": "실제로 빨라진게 아니라",
+      "image_url": null,
+      "read_by": [
+        1,
+        7
+      ],
+      "created_at": "2026-05-07T07:54:20.550Z"
+    },
+    {
+      "id": 83,
+      "room_id": 3,
+      "sender_id": 7,
+      "content": "뭔가 조금 이상한데",
+      "image_url": null,
+      "read_by": [
+        7,
+        1
+      ],
+      "created_at": "2026-05-07T07:54:26.630Z"
+    },
+    {
+      "id": 84,
+      "room_id": 3,
+      "sender_id": 7,
+      "content": "미리보기같은 느낌이네",
+      "image_url": null,
+      "read_by": [
+        7,
+        1
+      ],
+      "created_at": "2026-05-07T07:54:38.167Z"
+    },
+    {
+      "id": 85,
+      "room_id": 3,
+      "sender_id": 1,
+      "content": "서버응답을 안기다리고 우선 표시했다가 응답오면 다시 수정하는 원리라서",
+      "image_url": null,
+      "read_by": [
+        1,
+        7
+      ],
+      "created_at": "2026-05-07T07:54:55.839Z"
+    },
+    {
+      "id": 86,
+      "room_id": 3,
+      "sender_id": 1,
+      "content": "흐음",
+      "image_url": null,
+      "read_by": [
+        1,
+        7
+      ],
+      "created_at": "2026-05-07T07:55:00.066Z"
+    },
+    {
+      "id": 87,
+      "room_id": 1,
+      "sender_id": 1,
+      "content": "야",
+      "image_url": null,
+      "read_by": [
+        1
+      ],
+      "created_at": "2026-05-07T07:55:04.502Z"
+    },
+    {
+      "id": 88,
+      "room_id": 1,
+      "sender_id": 1,
+      "content": "뭐하냐?",
+      "image_url": null,
+      "read_by": [
+        1
+      ],
+      "created_at": "2026-05-07T07:55:07.558Z"
+    },
+    {
+      "id": 89,
+      "room_id": 3,
+      "sender_id": 1,
+      "content": "그리고 이게 누적채팅 양이 많아지면 버벅임 다른채팅들이랑 다르게",
+      "image_url": null,
+      "read_by": [
+        1,
+        7
+      ],
+      "created_at": "2026-05-07T07:55:33.452Z"
+    },
+    {
+      "id": 90,
+      "room_id": 1,
+      "sender_id": 1,
+      "content": "싸지박자",
+      "image_url": null,
+      "read_by": [
+        1
+      ],
+      "created_at": "2026-05-07T07:55:39.927Z"
+    },
+    {
+      "id": 91,
+      "room_id": 3,
+      "sender_id": 7,
+      "content": "서버 문제인가",
+      "image_url": null,
+      "read_by": [
+        7,
+        1
+      ],
+      "created_at": "2026-05-07T07:55:57.534Z"
+    },
+    {
+      "id": 92,
+      "room_id": 3,
+      "sender_id": 1,
+      "content": "흠 그러게",
+      "image_url": null,
+      "read_by": [
+        1,
+        7
+      ],
+      "created_at": "2026-05-07T07:56:46.316Z"
+    },
+    {
+      "id": 93,
+      "room_id": 3,
+      "sender_id": 7,
+      "content": "야",
+      "image_url": null,
+      "read_by": [
+        7,
+        1
+      ],
+      "created_at": "2026-05-07T08:05:57.635Z"
+    },
+    {
+      "id": 94,
+      "room_id": 3,
+      "sender_id": 1,
+      "content": "야",
+      "image_url": null,
+      "read_by": [
+        1,
+        7
+      ],
+      "created_at": "2026-05-07T08:06:04.131Z"
+    },
+    {
+      "id": 95,
+      "room_id": 3,
+      "sender_id": 7,
+      "content": "야호",
+      "image_url": null,
+      "read_by": [
+        7,
+        1
+      ],
+      "created_at": "2026-05-07T08:06:25.140Z"
+    },
+    {
+      "id": 96,
+      "room_id": 3,
+      "sender_id": 1,
+      "client_id": "client-1778141466509-7l57yj18fmh",
+      "content": "야르",
+      "image_url": null,
+      "read_by": [
+        1,
+        7
+      ],
+      "created_at": "2026-05-07T08:11:06.552Z"
+    },
+    {
+      "id": 97,
+      "room_id": 3,
+      "sender_id": 1,
+      "client_id": "client-1778141468842-irdvqkf9hl",
+      "content": "야",
+      "image_url": null,
+      "read_by": [
+        1,
+        7
+      ],
+      "created_at": "2026-05-07T08:11:08.977Z"
+    },
+    {
+      "id": 98,
+      "room_id": 3,
+      "sender_id": 1,
+      "client_id": "client-1778141471863-uv15t31ee7s",
+      "content": "야",
+      "image_url": null,
+      "read_by": [
+        1,
+        7
+      ],
+      "created_at": "2026-05-07T08:11:11.948Z"
+    },
+    {
+      "id": 99,
+      "room_id": 3,
+      "sender_id": 7,
+      "client_id": "client-1778141473367-hbp66q9hoik",
+      "content": "석마딕",
+      "image_url": null,
+      "read_by": [
+        7,
+        1
+      ],
+      "created_at": "2026-05-07T08:11:13.445Z"
+    },
+    {
+      "id": 100,
+      "room_id": 3,
+      "sender_id": 1,
+      "client_id": "client-1778141474800-6mj6htjns3r",
+      "content": "야르",
+      "image_url": null,
+      "read_by": [
+        1,
+        7
+      ],
+      "created_at": "2026-05-07T08:11:14.916Z"
+    },
+    {
+      "id": 101,
+      "room_id": 3,
+      "sender_id": 1,
+      "client_id": "client-1778141481540-gmyn8f454c5",
+      "content": "야",
+      "image_url": null,
+      "read_by": [
+        1,
+        7
+      ],
+      "created_at": "2026-05-07T08:11:21.674Z"
+    },
+    {
+      "id": 102,
+      "room_id": 3,
+      "sender_id": 7,
+      "client_id": "client-1778141517446-9egtbkf0l38",
+      "content": "ㅏ",
+      "image_url": null,
+      "read_by": [
+        7,
+        1
+      ],
+      "created_at": "2026-05-07T08:11:57.543Z"
+    },
+    {
+      "id": 103,
+      "room_id": 3,
+      "sender_id": 7,
+      "client_id": "client-1778141521016-kfsywzbps4p",
+      "content": "ㅏ",
+      "image_url": null,
+      "read_by": [
+        7,
+        1
+      ],
+      "created_at": "2026-05-07T08:12:01.200Z"
+    },
+    {
+      "id": 104,
+      "room_id": 3,
+      "sender_id": 1,
+      "client_id": "client-1778141521382-tiumicd6uw",
+      "content": "채팅은 건드릴수록 맛가는 느낌인데;;",
+      "image_url": null,
+      "read_by": [
+        1,
+        7
+      ],
+      "created_at": "2026-05-07T08:12:01.409Z"
+    },
+    {
+      "id": 105,
+      "room_id": 3,
+      "sender_id": 1,
+      "client_id": "client-1778141526007-objpwg5myn",
+      "content": "아닌가",
+      "image_url": null,
+      "read_by": [
+        1,
+        7
+      ],
+      "created_at": "2026-05-07T08:12:06.115Z"
+    },
+    {
+      "id": 106,
+      "room_id": 3,
+      "sender_id": 1,
+      "client_id": "client-1778141529525-5rxnoh2hrop",
+      "content": "또 잘되네",
+      "image_url": null,
+      "read_by": [
+        1,
+        7
+      ],
+      "created_at": "2026-05-07T08:12:09.566Z"
+    },
+    {
+      "id": 107,
+      "room_id": 3,
+      "sender_id": 1,
+      "client_id": "client-1778141540135-4volpjqsnv",
+      "content": "일단은 이대로 ㄱㄱ?",
+      "image_url": null,
+      "read_by": [
+        1,
+        7
+      ],
+      "created_at": "2026-05-07T08:12:20.248Z"
+    },
+    {
+      "id": 108,
+      "room_id": 3,
+      "sender_id": 7,
+      "client_id": "client-1778141540110-co9c9q11czv",
+      "content": "일단",
+      "image_url": null,
+      "read_by": [
+        7,
+        1
+      ],
+      "created_at": "2026-05-07T08:12:20.299Z"
+    },
+    {
+      "id": 109,
+      "room_id": 3,
+      "sender_id": 7,
+      "client_id": "client-1778141547202-qr51ye1w6l",
+      "content": "여기까지 keep해놓자",
+      "image_url": null,
+      "read_by": [
+        7,
+        1
+      ],
+      "created_at": "2026-05-07T08:12:27.326Z"
+    },
+    {
+      "id": 110,
+      "room_id": 3,
+      "sender_id": 1,
+      "client_id": "client-1778141552214-zmto9q0lpl",
+      "content": "오키",
+      "image_url": null,
+      "read_by": [
+        1,
+        7
+      ],
+      "created_at": "2026-05-07T08:12:32.330Z"
+    },
+    {
+      "id": 111,
+      "room_id": 3,
+      "sender_id": 1,
+      "client_id": "client-1778141553000-pnxe2hngtw",
+      "content": "그",
+      "image_url": null,
+      "read_by": [
+        1,
+        7
+      ],
+      "created_at": "2026-05-07T08:12:33.047Z"
+    },
+    {
+      "id": 112,
+      "room_id": 3,
+      "sender_id": 1,
+      "client_id": "client-1778141555067-q7xenax2j0i",
+      "content": "방금전은",
+      "image_url": null,
+      "read_by": [
+        1,
+        7
+      ],
+      "created_at": "2026-05-07T08:12:35.199Z"
+    },
+    {
+      "id": 113,
+      "room_id": 3,
+      "sender_id": 1,
+      "client_id": "client-1778141572050-a9hn4a5m4z",
+      "content": "계속 달리는게 좀 비효율적인데",
+      "image_url": null,
+      "read_by": [
+        1,
+        7
+      ],
+      "created_at": "2026-05-07T08:12:52.090Z"
+    },
+    {
+      "id": 114,
+      "room_id": 3,
+      "sender_id": 1,
+      "client_id": "client-1778141576038-lgey5h2v7xj",
+      "content": "아예 없앨까",
+      "image_url": null,
+      "read_by": [
+        1,
+        7
+      ],
+      "created_at": "2026-05-07T08:12:56.067Z"
+    },
+    {
+      "id": 115,
+      "room_id": 3,
+      "sender_id": 1,
+      "client_id": "client-1778141587049-ajv1z6poeht",
+      "content": "이게 뭐 인스타마냥 서로 연락하는것도 아니고",
+      "image_url": null,
+      "read_by": [
+        1,
+        7
+      ],
+      "created_at": "2026-05-07T08:13:07.117Z"
+    },
+    {
+      "id": 116,
+      "room_id": 3,
+      "sender_id": 7,
+      "client_id": "client-1778141593211-zv8uhfue8v",
+      "content": "그치",
+      "image_url": null,
+      "read_by": [
+        7,
+        1
+      ],
+      "created_at": "2026-05-07T08:13:13.294Z"
+    },
+    {
+      "id": 117,
+      "room_id": 3,
+      "sender_id": 1,
+      "client_id": "client-1778141599760-we90osdozqp",
+      "content": "개씹비즈니스 대화인데",
+      "image_url": null,
+      "read_by": [
+        1,
+        7
+      ],
+      "created_at": "2026-05-07T08:13:19.845Z"
+    },
+    {
+      "id": 118,
+      "room_id": 3,
+      "sender_id": 7,
+      "client_id": "client-1778141628759-qd98w4wdhk",
+      "content": "개씹ㅂㅈness 대화",
+      "image_url": null,
+      "read_by": [
+        7,
+        1
+      ],
+      "created_at": "2026-05-07T08:13:48.898Z"
+    },
+    {
+      "id": 119,
+      "room_id": 3,
+      "sender_id": 1,
+      "client_id": "client-1778141658321-y6sfp62ay9a",
+      "content": "예???",
+      "image_url": null,
+      "read_by": [
+        1,
+        7
+      ],
+      "created_at": "2026-05-07T08:14:18.370Z"
+    },
+    {
+      "id": 120,
+      "room_id": 3,
+      "sender_id": 1,
+      "client_id": "client-1778141697460-zkc9dds69s",
+      "content": "야",
+      "image_url": null,
+      "read_by": [
+        1,
+        7
+      ],
+      "created_at": "2026-05-07T08:14:57.538Z"
+    },
+    {
+      "id": 121,
+      "room_id": 4,
+      "sender_id": 7,
+      "client_id": "client-1778141699214-6s24c7u59jd",
+      "content": "안녕하세요^^",
+      "image_url": null,
+      "read_by": [
+        7,
+        1
+      ],
+      "created_at": "2026-05-07T08:14:59.380Z"
+    },
+    {
+      "id": 122,
+      "room_id": 3,
+      "sender_id": 1,
+      "client_id": "client-1778141699896-8j3hz0uobnp",
+      "content": "야",
+      "image_url": null,
+      "read_by": [
+        1,
+        7
+      ],
+      "created_at": "2026-05-07T08:14:59.971Z"
+    },
+    {
+      "id": 123,
+      "room_id": 3,
+      "sender_id": 1,
+      "client_id": "client-1778141702064-7uimjud2fjx",
+      "content": "야르렁",
+      "image_url": null,
+      "read_by": [
+        1,
+        7
+      ],
+      "created_at": "2026-05-07T08:15:02.096Z"
+    },
+    {
+      "id": 124,
+      "room_id": 3,
+      "sender_id": 7,
+      "client_id": "client-1778141711246-8fnseq9tpdx",
+      "content": "오",
+      "image_url": null,
+      "read_by": [
+        7,
+        1
+      ],
+      "created_at": "2026-05-07T08:15:11.332Z"
+    },
+    {
+      "id": 125,
+      "room_id": 3,
+      "sender_id": 7,
+      "client_id": "client-1778141716284-0nci0cc1pda",
+      "content": "근데 이거",
+      "image_url": null,
+      "read_by": [
+        7,
+        1
+      ],
+      "created_at": "2026-05-07T08:15:16.372Z"
+    },
+    {
+      "id": 126,
+      "room_id": 3,
+      "sender_id": 7,
+      "client_id": "client-1778141738207-ddlogi0nz7m",
+      "content": "차피 1분 지나면 1분 전으로 다시 뜨는대",
+      "image_url": null,
+      "read_by": [
+        7,
+        1
+      ],
+      "created_at": "2026-05-07T08:15:38.320Z"
+    },
+    {
+      "id": 127,
+      "room_id": 3,
+      "sender_id": 7,
+      "client_id": "client-1778141744314-fv81q56tz5r",
+      "content": "그게 그거 아니냐",
+      "image_url": null,
+      "read_by": [
+        7,
+        1
+      ],
+      "created_at": "2026-05-07T08:15:44.409Z"
+    },
+    {
+      "id": 128,
+      "room_id": 3,
+      "sender_id": 1,
+      "client_id": "client-1778141749246-qz5zxjin8d",
+      "content": "그렇네",
+      "image_url": null,
+      "read_by": [
+        1,
+        7
+      ],
+      "created_at": "2026-05-07T08:15:49.352Z"
+    },
+    {
+      "id": 129,
+      "room_id": 3,
+      "sender_id": 7,
+      "client_id": "client-1778141839679-elopqm4293",
+      "content": "아 이거",
+      "image_url": null,
+      "read_by": [
+        7,
+        1
+      ],
+      "created_at": "2026-05-07T08:17:19.876Z"
+    },
+    {
+      "id": 130,
+      "room_id": 3,
+      "sender_id": 7,
+      "client_id": "client-1778141843607-gh53ydr8h2p",
+      "content": "스크롤 막히는게",
+      "image_url": null,
+      "read_by": [
+        7,
+        1
+      ],
+      "created_at": "2026-05-07T08:17:23.765Z"
+    },
+    {
+      "id": 131,
+      "room_id": 3,
+      "sender_id": 7,
+      "client_id": "client-1778141852151-wc9dablf4g",
+      "content": "렌더링 최근 메세지만 한다고 해서",
+      "image_url": null,
+      "read_by": [
+        7,
+        1
+      ],
+      "created_at": "2026-05-07T08:17:32.244Z"
+    },
+    {
+      "id": 132,
+      "room_id": 3,
+      "sender_id": 7,
+      "client_id": "client-1778141854055-m922kvlvqka",
+      "content": "이러는건가",
+      "image_url": null,
+      "read_by": [
+        7,
+        1
+      ],
+      "created_at": "2026-05-07T08:17:34.147Z"
+    },
+    {
+      "id": 133,
+      "room_id": 4,
+      "sender_id": 7,
+      "client_id": "client-1778141868525-4szvt3ucu9q",
+      "content": "야 이 년아",
+      "image_url": null,
+      "read_by": [
+        7,
+        1
+      ],
+      "created_at": "2026-05-07T08:17:48.622Z"
+    },
+    {
+      "id": 134,
+      "room_id": 4,
+      "sender_id": 7,
+      "client_id": "client-1778141876476-tsks72ih1t",
+      "content": "사람이 말을 걸었으면 대답을 해야지",
+      "image_url": null,
+      "read_by": [
+        7,
+        1
+      ],
+      "created_at": "2026-05-07T08:17:56.578Z"
+    },
+    {
+      "id": 135,
+      "room_id": 4,
+      "sender_id": 7,
+      "client_id": "client-1778141880923-raym7gncpc",
+      "content": "찢어줄까?",
+      "image_url": null,
+      "read_by": [
+        7,
+        1
+      ],
+      "created_at": "2026-05-07T08:18:01.041Z"
+    },
+    {
+      "id": 136,
+      "room_id": 4,
+      "sender_id": 1,
+      "client_id": "client-1778142045356-xeyvaf1pll",
+      "content": "예???",
+      "image_url": null,
+      "read_by": [
+        1,
+        7
+      ],
+      "created_at": "2026-05-07T08:20:45.431Z"
+    },
+    {
+      "id": 137,
+      "room_id": 4,
+      "sender_id": 7,
+      "client_id": "client-1778142061871-jxj4f0y99zr",
+      "content": "나 아는 사람이 대통령인데",
+      "image_url": null,
+      "read_by": [
+        7,
+        1
+      ],
+      "created_at": "2026-05-07T08:21:01.957Z"
+    },
+    {
+      "id": 138,
+      "room_id": 4,
+      "sender_id": 7,
+      "client_id": "client-1778142066084-50iin7w2twe",
+      "content": "그 분이 이런거 전문이야",
+      "image_url": null,
+      "read_by": [
+        7,
+        1
+      ],
+      "created_at": "2026-05-07T08:21:06.275Z"
+    },
+    {
+      "id": 139,
+      "room_id": 3,
+      "sender_id": 1,
+      "client_id": "client-1778142068893-z7hcx8s2usa",
+      "content": "음",
+      "image_url": null,
+      "read_by": [
+        1,
+        7
+      ],
+      "created_at": "2026-05-07T08:21:08.947Z"
+    },
+    {
+      "id": 140,
+      "room_id": 3,
+      "sender_id": 1,
+      "client_id": "client-1778142070747-o85p5rkbsp",
+      "content": "몰라",
+      "image_url": null,
+      "read_by": [
+        1,
+        7
+      ],
+      "created_at": "2026-05-07T08:21:10.797Z"
+    },
+    {
+      "id": 141,
+      "room_id": 4,
+      "sender_id": 1,
+      "client_id": "client-1778142076620-3kr9x8nr1qa",
+      "content": "예????",
+      "image_url": null,
+      "read_by": [
+        1,
+        7
+      ],
+      "created_at": "2026-05-07T08:21:16.669Z"
+    },
+    {
+      "id": 142,
+      "room_id": 4,
+      "sender_id": 7,
+      "client_id": "client-1778142094816-hw24b2q9bzl",
+      "content": "채팅 적으니까",
+      "image_url": null,
+      "read_by": [
+        7,
+        1
+      ],
+      "created_at": "2026-05-07T08:21:34.966Z"
+    },
+    {
+      "id": 143,
+      "room_id": 4,
+      "sender_id": 7,
+      "client_id": "client-1778142102900-m68lklijdo",
+      "content": "들어올 때 로딩하는 게 적긴 하네",
+      "image_url": null,
+      "read_by": [
+        7,
+        1
+      ],
+      "created_at": "2026-05-07T08:21:42.986Z"
+    },
+    {
+      "id": 144,
+      "room_id": 4,
+      "sender_id": 1,
+      "client_id": "client-1778142109602-ra1ma18aw8g",
+      "content": "! 이 채팅은 검열된 채팅입니다",
+      "image_url": null,
+      "read_by": [
+        1,
+        7
+      ],
+      "created_at": "2026-05-07T08:21:49.646Z"
+    },
+    {
+      "id": 145,
+      "room_id": 4,
+      "sender_id": 1,
+      "client_id": "client-1778142112872-6py0cyuwyus",
+      "content": "ㄹㅇ",
+      "image_url": null,
+      "read_by": [
+        1,
+        7
+      ],
+      "created_at": "2026-05-07T08:21:52.946Z"
+    },
+    {
+      "id": 146,
+      "room_id": 4,
+      "sender_id": 7,
+      "client_id": "client-1778142116147-l1yja6ex3cj",
+      "content": "🛢🛢🛢",
+      "image_url": null,
+      "read_by": [
+        7,
+        1
+      ],
+      "created_at": "2026-05-07T08:21:56.256Z"
+    },
+    {
+      "id": 147,
+      "room_id": 4,
+      "sender_id": 7,
+      "client_id": "client-1778142126859-ys1wk3hrhjp",
+      "content": "이정도면 채팅 낫배드같은데",
+      "image_url": null,
+      "read_by": [
+        7,
+        1
+      ],
+      "created_at": "2026-05-07T08:22:06.956Z"
+    },
+    {
+      "id": 148,
+      "room_id": 4,
+      "sender_id": 1,
+      "client_id": "client-1778142156465-dku1f7tpfw8",
+      "content": "그럼 찐막으로 이거 끌어올리는것만 수정하고 깃에 올릴게",
+      "image_url": null,
+      "read_by": [
+        1,
+        7
+      ],
+      "created_at": "2026-05-07T08:22:36.498Z"
+    },
+    {
+      "id": 149,
+      "room_id": 4,
+      "sender_id": 1,
+      "client_id": "client-1778142424404-pfovnvz8bea",
+      "content": "야",
+      "image_url": null,
+      "read_by": [
+        1,
+        7
+      ],
+      "created_at": "2026-05-07T08:27:04.444Z"
+    },
+    {
+      "id": 150,
+      "room_id": 4,
+      "sender_id": 7,
+      "client_id": "client-1778142434604-5k98gnpou2",
+      "content": "잉",
+      "image_url": null,
+      "read_by": [
+        7,
+        1
+      ],
+      "created_at": "2026-05-07T08:27:14.728Z"
+    },
+    {
+      "id": 151,
+      "room_id": 4,
+      "sender_id": 1,
+      "client_id": "client-1778142436618-z375dzbybck",
+      "content": "이제 세이브한다 채팅은 다시 건들지 말자",
+      "image_url": null,
+      "read_by": [
+        1,
+        7
+      ],
+      "created_at": "2026-05-07T08:27:16.674Z"
+    },
+    {
+      "id": 152,
+      "room_id": 4,
+      "sender_id": 7,
+      "client_id": "client-1778142439993-dfcdmmgrzad",
+      "content": "ㅇㅋ",
+      "image_url": null,
+      "read_by": [
+        7,
+        1
+      ],
+      "created_at": "2026-05-07T08:27:20.096Z"
+    },
+    {
+      "id": 153,
+      "room_id": 4,
+      "sender_id": 7,
+      "client_id": "client-1778142443188-3jevpig6xsj",
+      "content": "메일 맛 보실?",
+      "image_url": null,
+      "read_by": [
+        7,
+        1
+      ],
+      "created_at": "2026-05-07T08:27:23.277Z"
+    },
+    {
+      "id": 154,
+      "room_id": 4,
+      "sender_id": 1,
+      "client_id": "client-1778142448006-ti1emgax7ss",
+      "content": "ㅇㅋㅇㅋ",
+      "image_url": null,
+      "read_by": [
+        1,
+        7
+      ],
+      "created_at": "2026-05-07T08:27:28.056Z"
+    },
+    {
+      "id": 155,
+      "room_id": 4,
+      "sender_id": 1,
+      "client_id": "client-1778142449791-2x7cv7zw3gb",
+      "content": "근데",
+      "image_url": null,
+      "read_by": [
+        1,
+        7
+      ],
+      "created_at": "2026-05-07T08:27:29.916Z"
+    },
+    {
+      "id": 156,
+      "room_id": 4,
+      "sender_id": 1,
+      "client_id": "client-1778142453663-xeqzvc85m0g",
+      "content": "수업끝나가누",
+      "image_url": null,
+      "read_by": [
+        1,
+        7
+      ],
+      "created_at": "2026-05-07T08:27:33.774Z"
+    },
+    {
+      "id": 157,
+      "room_id": 4,
+      "sender_id": 7,
+      "client_id": "client-1778142458881-in4nsoxeuuq",
+      "content": "ㅠㅠ",
+      "image_url": null,
+      "read_by": [
+        7
+      ],
+      "created_at": "2026-05-07T08:27:38.980Z"
+    },
+    {
+      "id": 158,
+      "room_id": 5,
+      "sender_id": 7,
+      "client_id": "client-1778142464313-htpsfm39zzs",
+      "content": "으흐흐흐",
+      "image_url": null,
+      "read_by": [
+        7
+      ],
+      "created_at": "2026-05-07T08:27:44.413Z"
+    },
+    {
+      "id": 159,
+      "room_id": 5,
+      "sender_id": 7,
+      "client_id": "client-1778142468632-wm2p6t7cogg",
+      "content": "민지 어디 살아?",
+      "image_url": null,
+      "read_by": [
+        7
+      ],
+      "created_at": "2026-05-07T08:27:48.828Z"
+    },
+    {
+      "id": 160,
+      "room_id": 5,
+      "sender_id": 7,
+      "client_id": "client-1778142475749-853v9n9h0x5",
+      "content": "오빠가 맛있는 거 사줄까?",
+      "image_url": null,
+      "read_by": [
+        7
+      ],
+      "created_at": "2026-05-07T08:27:55.895Z"
+    },
+    {
+      "id": 161,
+      "room_id": 5,
+      "sender_id": 7,
+      "client_id": "client-1778142485217-0mrxezg9g8q",
+      "content": "민지 사진 함 볼 수 있을까",
+      "image_url": null,
+      "read_by": [
+        7
+      ],
+      "created_at": "2026-05-07T08:28:05.418Z"
+    },
+    {
+      "id": 162,
+      "room_id": 5,
+      "sender_id": 7,
+      "client_id": "client-1778142493868-0u0x6mzkhigk",
+      "content": "으흐흐흐흐 오빠 나쁜 사람 아니야",
+      "image_url": null,
+      "read_by": [
+        7
+      ],
+      "created_at": "2026-05-07T08:28:13.957Z"
     }
   ],
   "sessions": [

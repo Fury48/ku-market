@@ -13,6 +13,7 @@ const {
   findUserByUsername,
   getAccountStats,
   getChatRoomDetail,
+  getChatMessagesAfter,
   getChatRooms,
   getFeed,
   getHealth,
@@ -273,10 +274,16 @@ async function handleRequest(req, res) {
   }
 
   const messageMatch = pathname.match(/^\/api\/chats\/(\d+)\/messages$/);
+  if (messageMatch && req.method === 'GET') {
+    const { user } = requireUser(req);
+    sendJson(req, res, 200, { messages: getChatMessagesAfter(user.id, Number(messageMatch[1]), url.searchParams.get('afterId')) });
+    return;
+  }
+
   if (messageMatch && req.method === 'POST') {
     const { user } = requireUser(req);
     const body = await readJson(req);
-    sendJson(req, res, 201, { room: createChatMessage(user.id, Number(messageMatch[1]), body) });
+    sendJson(req, res, 201, { message: createChatMessage(user.id, Number(messageMatch[1]), body) });
     return;
   }
 

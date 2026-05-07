@@ -1,75 +1,21 @@
-import { useCallback, useRef, useState } from 'react';
+import { useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { type Href, useRouter } from 'expo-router';
-import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { apiFetch } from '@/lib/api';
 import { palette, radius, spacing } from '@/lib/theme';
-import { ChatRoomSummary } from '@/types/models';
 import { ChatRoomRow } from '@/components/chat-room-row';
+import { useChatRooms } from '@/providers/chat-rooms-provider';
 
 export default function ChatsScreen() {
   const router = useRouter();
-  const isLoadingRoomsRef = useRef(false);
-  const [rooms, setRooms] = useState<ChatRoomSummary[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { rooms, loading, refreshRooms } = useChatRooms();
   const [refreshing, setRefreshing] = useState(false);
   const [showAlert, setShowAlert] = useState(true);
-
-  const loadRooms = useCallback(async () => {
-    const response = await apiFetch<{ rooms: ChatRoomSummary[] }>('/chats');
-    setRooms(response.rooms);
-  }, []);
-
-  useFocusEffect(
-    useCallback(() => {
-      let isActive = true;
-
-      async function refreshRooms(showLoading = false) {
-        if (isLoadingRoomsRef.current) {
-          return;
-        }
-
-        try {
-          isLoadingRoomsRef.current = true;
-          if (showLoading) {
-            setLoading(true);
-          }
-
-          const response = await apiFetch<{ rooms: ChatRoomSummary[] }>('/chats');
-
-          if (isActive) {
-            setRooms(response.rooms);
-          }
-        } catch {
-          if (isActive && showLoading) {
-            setRooms([]);
-          }
-        } finally {
-          isLoadingRoomsRef.current = false;
-          if (isActive && showLoading) {
-            setLoading(false);
-          }
-        }
-      }
-
-      refreshRooms(true);
-
-      const refreshInterval = setInterval(() => {
-        refreshRooms();
-      }, 1500);
-
-      return () => {
-        isActive = false;
-        clearInterval(refreshInterval);
-      };
-    }, [])
-  );
 
   async function handleRefresh() {
     setRefreshing(true);
     try {
-      await loadRooms();
+      await refreshRooms();
     } finally {
       setRefreshing(false);
     }

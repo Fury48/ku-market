@@ -3,8 +3,12 @@ import React from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { HapticTab } from '@/components/haptic-tab';
 import { palette } from '@/lib/theme';
+import { useChatRooms } from '@/providers/chat-rooms-provider';
 
 export default function TabLayout() {
+  const { unreadCount } = useChatRooms();
+  const chatBadge = unreadCount > 99 ? '99+' : unreadCount || undefined;
+
   return (
     <Tabs
       screenOptions={{
@@ -63,6 +67,13 @@ export default function TabLayout() {
         name="chats"
         options={{
           title: '채팅',
+          tabBarBadge: chatBadge,
+          tabBarBadgeStyle: {
+            backgroundColor: palette.burgundy,
+            color: palette.white,
+            fontSize: 11,
+            fontWeight: '700',
+          },
           tabBarIcon: ({ color, focused }) => (
             <Ionicons size={24} name={focused ? 'chatbubble' : 'chatbubble-outline'} color={color} />
           ),

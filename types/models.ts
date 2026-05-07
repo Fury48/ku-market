@@ -87,6 +87,7 @@ export interface ChatRoomSummary {
 
 export interface ChatMessage {
   id: number;
+  clientId?: string | null;
   content: string;
   imageUrl: string | null;
   createdAt: string;

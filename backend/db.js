@@ -587,6 +587,7 @@ function getChatRoomDetail(userId, roomId) {
       const sender = getUserById(message.sender_id);
       return {
         id: message.id,
+        clientId: message.client_id || null,
         content: message.content,
         imageUrl: message.image_url,
         createdAt: message.created_at,
@@ -612,6 +613,50 @@ function getChatRoomDetail(userId, roomId) {
   };
 }
 
+function getChatMessagesAfter(userId, roomId, afterId) {
+  ensureState();
+  const room = state.chat_rooms.find((item) => item.id === Number(roomId));
+
+  if (!room) {
+    throw createError(404, '채팅방을 찾을 수 없습니다.');
+  }
+
+  ensureRoomParticipant(room, userId);
+
+  const minimumId = Number(afterId) || 0;
+  let changed = false;
+  const messages = state.messages
+    .filter((message) => message.room_id === room.id && message.id > minimumId)
+    .sort((a, b) => a.id - b.id)
+    .map((message) => {
+      if (message.sender_id !== Number(userId) && !(message.read_by || []).includes(Number(userId))) {
+        message.read_by = [...(message.read_by || []), Number(userId)];
+        changed = true;
+      }
+
+      const sender = getUserById(message.sender_id);
+      return {
+        id: message.id,
+        clientId: message.client_id || null,
+        content: message.content,
+        imageUrl: message.image_url,
+        createdAt: message.created_at,
+        isMine: sender.id === Number(userId),
+        sender: {
+          id: sender.id,
+          nickname: sender.nickname,
+          profileImageUrl: sender.profile_image_url,
+        },
+      };
+    });
+
+  if (changed) {
+    persist();
+  }
+
+  return messages;
+}
+
 function createChatMessage(userId, roomId, payload) {
   ensureState();
   const room = state.chat_rooms.find((item) => item.id === Number(roomId));
@@ -626,18 +671,34 @@ function createChatMessage(userId, roomId, payload) {
     throw createError(400, '메시지 또는 이미지를 입력해 주세요.');
   }
 
-  state.messages.push({
+  const message = {
     id: nextId('messages'),
     room_id: room.id,
     sender_id: Number(userId),
+    client_id: payload.clientId || null,
     content: String(payload.content || '').trim(),
     image_url: payload.imageUrl || null,
     created_at: nowIso(),
     read_by: [Number(userId)],
-  });
+  };
+
+  state.messages.push(message);
   persist();
 
-  return getChatRoomDetail(userId, roomId);
+  const sender = getUserById(message.sender_id);
+  return {
+    id: message.id,
+    clientId: message.client_id || null,
+    content: message.content,
+    imageUrl: message.image_url,
+    createdAt: message.created_at,
+    isMine: sender.id === Number(userId),
+    sender: {
+      id: sender.id,
+      nickname: sender.nickname,
+      profileImageUrl: sender.profile_image_url,
+    },
+  };
 }
 
 function updateProfile(userId, payload) {
@@ -747,6 +808,7 @@ module.exports = {
   openChatRoom,
   getChatRooms,
   getChatRoomDetail,
+  getChatMessagesAfter,
   createChatMessage,
   updateProfile,
   registerUser,

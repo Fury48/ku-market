@@ -1,5 +1,18 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import {
+  Alert,
+  FlatList,
+  Keyboard,
+  KeyboardAvoidingView,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { type Href, useLocalSearchParams, useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
@@ -7,57 +20,173 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { apiFetch } from '@/lib/api';
 import { pickImages } from '@/lib/image-picker';
 import { palette, radius, spacing } from '@/lib/theme';
-import { ChatRoomDetail } from '@/types/models';
+import { ChatMessage, ChatRoomDetail } from '@/types/models';
 import { MessageBubble } from '@/components/message-bubble';
+import { useChatRooms } from '@/providers/chat-rooms-provider';
+import { useAuth } from '@/providers/auth-provider';
 
 function pickParam(value?: string | string[]) {
   return Array.isArray(value) ? value[0] : value;
 }
 
+function isSameRoom(previous: ChatRoomDetail | null, next: ChatRoomDetail) {
+  if (!previous || previous.id !== next.id || previous.postTitle !== next.postTitle) {
+    return false;
+  }
+
+  if (previous.messages.length !== next.messages.length) {
+    return false;
+  }
+
+  return previous.messages.every((message, index) => {
+    const nextMessage = next.messages[index];
+
+    return (
+      nextMessage &&
+      message.id === nextMessage.id &&
+      message.clientId === nextMessage.clientId &&
+      message.content === nextMessage.content &&
+      message.imageUrl === nextMessage.imageUrl &&
+      message.createdAt === nextMessage.createdAt &&
+      message.isMine === nextMessage.isMine
+    );
+  });
+}
+
+function getMessageKey(message: ChatMessage) {
+  return message.clientId ?? String(message.id);
+}
+
+function mergeMessages(previousMessages: ChatMessage[], incomingMessages: ChatMessage[]) {
+  const validIncomingMessages = incomingMessages.filter(Boolean);
+
+  if (!validIncomingMessages.length) {
+    return previousMessages;
+  }
+
+  const mergedMessages = [...previousMessages];
+
+  validIncomingMessages.forEach((incomingMessage) => {
+    const sameClientIndex = incomingMessage.clientId
+      ? mergedMessages.findIndex((message) => message.clientId === incomingMessage.clientId)
+      : -1;
+    const sameIdIndex = mergedMessages.findIndex((message) => message.id === incomingMessage.id);
+    const messageIndex = sameClientIndex >= 0 ? sameClientIndex : sameIdIndex;
+
+    if (messageIndex >= 0) {
+      mergedMessages[messageIndex] = incomingMessage;
+      return;
+    }
+
+    mergedMessages.push(incomingMessage);
+  });
+
+  return mergedMessages.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+}
+
+type SendMessageResponse = {
+  message?: ChatMessage;
+  room?: ChatRoomDetail;
+};
+
 export default function ChatDetailScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ id?: string | string[] }>();
+  const { refreshRooms } = useChatRooms();
+  const { user } = useAuth();
   const roomId = pickParam(params.id);
-  const messagesScrollRef = useRef<ScrollView>(null);
+  const messagesListRef = useRef<FlatList<ChatMessage>>(null);
   const isLoadingRoomRef = useRef(false);
+  const isSendingMessageRef = useRef(false);
+  const hasRoomRef = useRef(false);
+  const latestServerMessageIdRef = useRef(0);
+  const didInitialScrollRef = useRef(false);
+  const isNearBottomRef = useRef(true);
+  const isMessageInputFocusedRef = useRef(false);
   const [room, setRoom] = useState<ChatRoomDetail | null>(null);
   const [showAlert, setShowAlert] = useState(true);
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const roomMessages = useMemo(() => room?.messages ?? [], [room?.messages]);
   const latestMessageId = useMemo(() => {
-    const messages = room?.messages ?? [];
-    return messages.length ? messages[messages.length - 1].id : null;
-  }, [room?.messages]);
+    return roomMessages.length ? getMessageKey(roomMessages[roomMessages.length - 1]) : null;
+  }, [roomMessages]);
+  const latestServerMessageId = useMemo(() => {
+    const serverMessages = roomMessages.filter((item) => item.id > 0);
+    return serverMessages.length ? serverMessages[serverMessages.length - 1].id : 0;
+  }, [roomMessages]);
 
-  const scrollToLatestMessage = useCallback((animated = true) => {
+  useEffect(() => {
+    hasRoomRef.current = Boolean(room);
+    latestServerMessageIdRef.current = latestServerMessageId;
+  }, [latestServerMessageId, room]);
+
+  const scrollToLatestMessage = useCallback((animated = true, force = false) => {
+    if (!force && !isNearBottomRef.current) {
+      return;
+    }
+
     requestAnimationFrame(() => {
-      messagesScrollRef.current?.scrollToEnd({ animated });
+      messagesListRef.current?.scrollToEnd({ animated });
     });
   }, []);
 
-  const scrollToLatestMessageAfterLayout = useCallback(() => {
-    scrollToLatestMessage();
-    setTimeout(() => scrollToLatestMessage(), 120);
-    setTimeout(() => scrollToLatestMessage(), 280);
+  const scrollToLatestMessageAfterLayout = useCallback((force = false) => {
+    scrollToLatestMessage(true, force);
+    setTimeout(() => scrollToLatestMessage(true, force), 120);
+    setTimeout(() => scrollToLatestMessage(true, force), 280);
   }, [scrollToLatestMessage]);
 
-  const loadRoom = useCallback(async () => {
-    if (!roomId) {
-      return null;
-    }
+  const handleMessagesScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
+    const distanceFromBottom = contentSize.height - (contentOffset.y + layoutMeasurement.height);
+    isNearBottomRef.current = distanceFromBottom < 96;
+  }, []);
 
-    const response = await apiFetch<{ room: ChatRoomDetail }>(`/chats/${roomId}`);
-    setRoom(response.room);
-    return response.room;
-  }, [roomId]);
+  const addOptimisticMessage = useCallback(
+    (content: string, imageUrl?: string) => {
+      if (!user) {
+        return null;
+      }
+
+      const clientId = `client-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      const optimisticMessage: ChatMessage = {
+        id: -Date.now(),
+        clientId,
+        content,
+        imageUrl: imageUrl ?? null,
+        createdAt: new Date().toISOString(),
+        isMine: true,
+        sender: {
+          id: user.id,
+          nickname: user.nickname,
+          profileImageUrl: user.profileImageUrl,
+        },
+      };
+
+      setRoom((previousRoom) => {
+        if (!previousRoom) {
+          return previousRoom;
+        }
+
+        return {
+          ...previousRoom,
+          messages: [...previousRoom.messages, optimisticMessage],
+        };
+      });
+
+      return clientId;
+    },
+    [user]
+  );
 
   useFocusEffect(
     useCallback(() => {
       let isActive = true;
 
       async function refreshRoom(showLoading = false) {
-        if (!roomId || isLoadingRoomRef.current) {
+        if (!roomId || isLoadingRoomRef.current || isSendingMessageRef.current) {
           return;
         }
 
@@ -67,10 +196,29 @@ export default function ChatDetailScreen() {
             setLoading(true);
           }
 
-          const response = await apiFetch<{ room: ChatRoomDetail }>(`/chats/${roomId}`);
+          if (!hasRoomRef.current && showLoading) {
+            const response = await apiFetch<{ room: ChatRoomDetail }>(`/chats/${roomId}`);
 
-          if (isActive) {
-            setRoom(response.room);
+            if (isActive) {
+              setRoom((previousRoom) => (isSameRoom(previousRoom, response.room) ? previousRoom : response.room));
+            }
+            return;
+          }
+
+          const response = await apiFetch<{ messages?: ChatMessage[] }>(`/chats/${roomId}/messages?afterId=${latestServerMessageIdRef.current}`);
+          const incomingMessages = response.messages ?? [];
+
+          if (isActive && incomingMessages.length) {
+            setRoom((previousRoom) => {
+              if (!previousRoom) {
+                return previousRoom;
+              }
+
+              return {
+                ...previousRoom,
+                messages: mergeMessages(previousRoom.messages, incomingMessages),
+              };
+            });
           }
         } catch {
           if (isActive && showLoading) {
@@ -85,28 +233,39 @@ export default function ChatDetailScreen() {
       }
 
       setLoading(true);
-      refreshRoom(true);
+      refreshRoom(true).finally(() => {
+        refreshRooms().catch(() => undefined);
+      });
 
       const refreshInterval = setInterval(() => {
         refreshRoom();
-      }, 1500);
+      }, 3000);
 
       return () => {
         isActive = false;
         clearInterval(refreshInterval);
       };
-    }, [roomId])
+    }, [refreshRooms, roomId])
   );
 
   useEffect(() => {
+    didInitialScrollRef.current = false;
+    isNearBottomRef.current = true;
+  }, [roomId]);
+
+  useEffect(() => {
     if (room?.id) {
-      scrollToLatestMessage();
+      const shouldForceInitialScroll = !didInitialScrollRef.current;
+      scrollToLatestMessage(true, shouldForceInitialScroll);
+      didInitialScrollRef.current = true;
     }
   }, [latestMessageId, room?.id, scrollToLatestMessage]);
 
   useEffect(() => {
     const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
-    const keyboardSubscription = Keyboard.addListener(showEvent, scrollToLatestMessageAfterLayout);
+    const keyboardSubscription = Keyboard.addListener(showEvent, () => {
+      scrollToLatestMessageAfterLayout(isMessageInputFocusedRef.current || !didInitialScrollRef.current);
+    });
 
     return () => {
       keyboardSubscription.remove();
@@ -118,22 +277,61 @@ export default function ChatDetailScreen() {
       return;
     }
 
-    if (!message.trim() && !imageUrl) {
+    const content = message.trim();
+
+    if ((!content && !imageUrl) || isSendingMessageRef.current) {
       return;
     }
 
+    const optimisticClientId = addOptimisticMessage(content, imageUrl);
+    isSendingMessageRef.current = true;
+    setSending(true);
+    setMessage('');
+    isNearBottomRef.current = true;
+    scrollToLatestMessageAfterLayout(true);
+
     try {
-      setSending(true);
-      await apiFetch(`/chats/${roomId}/messages`, {
+      const response = await apiFetch<SendMessageResponse>(`/chats/${roomId}/messages`, {
         method: 'POST',
-        body: JSON.stringify({ content: message.trim(), imageUrl: imageUrl ?? null }),
+        body: JSON.stringify({ content, imageUrl: imageUrl ?? null, clientId: optimisticClientId }),
       });
-      setMessage('');
-      await loadRoom();
-      scrollToLatestMessage();
+      setRoom((previousRoom) => {
+        if (!previousRoom) {
+          return previousRoom;
+        }
+
+        if (response.room) {
+          return response.room;
+        }
+
+        if (!response.message) {
+          return previousRoom;
+        }
+
+        return {
+          ...previousRoom,
+          messages: mergeMessages(previousRoom.messages, [response.message]),
+        };
+      });
+      refreshRooms().catch(() => undefined);
+      scrollToLatestMessageAfterLayout(true);
     } catch (error) {
+      if (optimisticClientId !== null) {
+        setRoom((previousRoom) => {
+          if (!previousRoom) {
+            return previousRoom;
+          }
+
+          return {
+            ...previousRoom,
+            messages: previousRoom.messages.filter((item) => item.clientId !== optimisticClientId),
+          };
+        });
+      }
+      setMessage(content);
       Alert.alert('메시지 전송 실패', error instanceof Error ? error.message : '다시 시도해 주세요.');
     } finally {
+      isSendingMessageRef.current = false;
       setSending(false);
     }
   }
@@ -184,20 +382,32 @@ export default function ChatDetailScreen() {
         </View>
       ) : null}
 
-      <ScrollView
-        ref={messagesScrollRef}
+      <FlatList
+        ref={messagesListRef}
+        data={roomMessages}
+        keyExtractor={getMessageKey}
+        renderItem={({ item }) => <MessageBubble message={item} />}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="interactive"
         style={styles.messagesList}
         contentContainerStyle={styles.messagesWrap}
-        onContentSizeChange={() => scrollToLatestMessage()}>
-        {loading ? <Text style={styles.helperText}>채팅을 불러오는 중...</Text> : null}
-        {!loading && !room ? <Text style={styles.helperText}>채팅방을 찾을 수 없습니다.</Text> : null}
-        {room?.messages.map((item) => <MessageBubble key={item.id} message={item} />)}
-      </ScrollView>
+        onScroll={handleMessagesScroll}
+        scrollEventThrottle={80}
+        initialNumToRender={18}
+        maxToRenderPerBatch={12}
+        windowSize={9}
+        removeClippedSubviews={Platform.OS !== 'web'}
+        ListHeaderComponent={
+          <>
+            {loading ? <Text style={styles.helperText}>채팅을 불러오는 중...</Text> : null}
+            {!loading && !room ? <Text style={styles.helperText}>채팅방을 찾을 수 없습니다.</Text> : null}
+          </>
+        }
+        onContentSizeChange={() => scrollToLatestMessage(false)}>
+      </FlatList>
 
       <View style={styles.inputBar}>
-        <Pressable onPress={handleSendImage} style={styles.imageButton}>
+        <Pressable disabled={sending} onPress={handleSendImage} style={[styles.imageButton, sending && styles.disabledButton]}>
           <Ionicons name="image-outline" size={20} color={palette.burgundy} />
         </Pressable>
         <TextInput
@@ -206,10 +416,20 @@ export default function ChatDetailScreen() {
           placeholder="메시지를 입력하세요"
           placeholderTextColor={palette.muted}
           style={styles.input}
-          onFocus={scrollToLatestMessageAfterLayout}
+          onFocus={() => {
+            isMessageInputFocusedRef.current = true;
+            scrollToLatestMessageAfterLayout(true);
+          }}
+          onBlur={() => {
+            isMessageInputFocusedRef.current = false;
+          }}
+          onPressIn={() => scrollToLatestMessageAfterLayout(true)}
           multiline
         />
-        <Pressable onPress={() => handleSend()} style={styles.sendButton}>
+        <Pressable
+          disabled={sending || !message.trim()}
+          onPress={() => handleSend()}
+          style={[styles.sendButton, (sending || !message.trim()) && styles.disabledSendButton]}>
           <Text style={styles.sendButtonText}>{sending ? '전송중' : '보내기'}</Text>
         </Pressable>
       </View>
@@ -313,6 +533,9 @@ const styles = StyleSheet.create({
     borderColor: palette.border,
     backgroundColor: palette.blush,
   },
+  disabledButton: {
+    opacity: 0.55,
+  },
   input: {
     flex: 1,
     minHeight: 44,
@@ -330,6 +553,9 @@ const styles = StyleSheet.create({
     backgroundColor: palette.burgundy,
     paddingHorizontal: 14,
     paddingVertical: 12,
+  },
+  disabledSendButton: {
+    opacity: 0.55,
   },
   sendButtonText: {
     color: palette.white,
