@@ -13,11 +13,14 @@ export default function TabLayout() {
         headerShown: false,
         tabBarButton: HapticTab,
         tabBarStyle: {
-          height: 78,
+          height: 100,
           paddingTop: 8,
-          paddingBottom: 14,
+          paddingBottom: 22,
           backgroundColor: palette.white,
           borderTopColor: palette.border,
+        },
+        tabBarItemStyle: {
+          paddingBottom: 2,
         },
       }}>
       <Tabs.Screen

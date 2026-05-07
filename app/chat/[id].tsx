@@ -1,5 +1,5 @@
-import { useCallback, useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Alert, Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { type Href, useLocalSearchParams, useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
@@ -18,33 +18,100 @@ export default function ChatDetailScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ id?: string | string[] }>();
   const roomId = pickParam(params.id);
+  const messagesScrollRef = useRef<ScrollView>(null);
+  const isLoadingRoomRef = useRef(false);
   const [room, setRoom] = useState<ChatRoomDetail | null>(null);
   const [showAlert, setShowAlert] = useState(true);
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const latestMessageId = useMemo(() => {
+    const messages = room?.messages ?? [];
+    return messages.length ? messages[messages.length - 1].id : null;
+  }, [room?.messages]);
+
+  const scrollToLatestMessage = useCallback((animated = true) => {
+    requestAnimationFrame(() => {
+      messagesScrollRef.current?.scrollToEnd({ animated });
+    });
+  }, []);
+
+  const scrollToLatestMessageAfterLayout = useCallback(() => {
+    scrollToLatestMessage();
+    setTimeout(() => scrollToLatestMessage(), 120);
+    setTimeout(() => scrollToLatestMessage(), 280);
+  }, [scrollToLatestMessage]);
 
   const loadRoom = useCallback(async () => {
     if (!roomId) {
-      return;
+      return null;
     }
 
     const response = await apiFetch<{ room: ChatRoomDetail }>(`/chats/${roomId}`);
     setRoom(response.room);
+    return response.room;
   }, [roomId]);
 
   useFocusEffect(
     useCallback(() => {
+      let isActive = true;
+
+      async function refreshRoom(showLoading = false) {
+        if (!roomId || isLoadingRoomRef.current) {
+          return;
+        }
+
+        try {
+          isLoadingRoomRef.current = true;
+          if (showLoading) {
+            setLoading(true);
+          }
+
+          const response = await apiFetch<{ room: ChatRoomDetail }>(`/chats/${roomId}`);
+
+          if (isActive) {
+            setRoom(response.room);
+          }
+        } catch {
+          if (isActive && showLoading) {
+            setRoom(null);
+          }
+        } finally {
+          isLoadingRoomRef.current = false;
+          if (isActive && showLoading) {
+            setLoading(false);
+          }
+        }
+      }
+
       setLoading(true);
-      loadRoom()
-        .catch(() => {
-          setRoom(null);
-        })
-        .finally(() => {
-          setLoading(false);
-        });
-    }, [loadRoom])
+      refreshRoom(true);
+
+      const refreshInterval = setInterval(() => {
+        refreshRoom();
+      }, 1500);
+
+      return () => {
+        isActive = false;
+        clearInterval(refreshInterval);
+      };
+    }, [roomId])
   );
+
+  useEffect(() => {
+    if (room?.id) {
+      scrollToLatestMessage();
+    }
+  }, [latestMessageId, room?.id, scrollToLatestMessage]);
+
+  useEffect(() => {
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const keyboardSubscription = Keyboard.addListener(showEvent, scrollToLatestMessageAfterLayout);
+
+    return () => {
+      keyboardSubscription.remove();
+    };
+  }, [scrollToLatestMessageAfterLayout]);
 
   async function handleSend(imageUrl?: string) {
     if (!roomId) {
@@ -63,6 +130,7 @@ export default function ChatDetailScreen() {
       });
       setMessage('');
       await loadRoom();
+      scrollToLatestMessage();
     } catch (error) {
       Alert.alert('메시지 전송 실패', error instanceof Error ? error.message : '다시 시도해 주세요.');
     } finally {
@@ -117,10 +185,12 @@ export default function ChatDetailScreen() {
       ) : null}
 
       <ScrollView
+        ref={messagesScrollRef}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="interactive"
         style={styles.messagesList}
-        contentContainerStyle={styles.messagesWrap}>
+        contentContainerStyle={styles.messagesWrap}
+        onContentSizeChange={() => scrollToLatestMessage()}>
         {loading ? <Text style={styles.helperText}>채팅을 불러오는 중...</Text> : null}
         {!loading && !room ? <Text style={styles.helperText}>채팅방을 찾을 수 없습니다.</Text> : null}
         {room?.messages.map((item) => <MessageBubble key={item.id} message={item} />)}
@@ -136,6 +206,7 @@ export default function ChatDetailScreen() {
           placeholder="메시지를 입력하세요"
           placeholderTextColor={palette.muted}
           style={styles.input}
+          onFocus={scrollToLatestMessageAfterLayout}
           multiline
         />
         <Pressable onPress={() => handleSend()} style={styles.sendButton}>
