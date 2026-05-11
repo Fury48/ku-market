@@ -95,9 +95,10 @@ export function BoardScreen({ board }: BoardScreenProps) {
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView edges={['top', 'left', 'right']} style={styles.safeArea}>
       <View style={styles.container}>
         <ScrollView
+          style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={palette.burgundy} />}>
           <SearchHeader
@@ -148,10 +149,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  scrollView: {
+    flex: 1,
+  },
   scrollContent: {
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.md,
-    paddingBottom: 120,
+    paddingBottom: spacing.lg,
   },
   loadingWrap: {
     paddingVertical: spacing.xxl,
