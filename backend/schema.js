@@ -118,6 +118,7 @@ const tableSchemas = {
       { name: 'code', type: 'TEXT', nullable: false },
       { name: 'verified', type: 'INTEGER', nullable: false },
       { name: 'created_at', type: 'TEXT', nullable: false },
+      { name: 'expires_at', type: 'TEXT', nullable: false },
     ],
   },
 };
@@ -244,7 +245,8 @@ CREATE TABLE verification_codes (
   email TEXT PRIMARY KEY,
   code TEXT NOT NULL,
   verified INTEGER NOT NULL,
-  created_at TEXT NOT NULL
+  created_at TEXT NOT NULL,
+  expires_at TEXT NOT NULL
 );`;
 
 module.exports = {

@@ -300,6 +300,8 @@ function createVerificationCode(email) {
   ensureState();
   const normalizedEmail = String(email).trim().toLowerCase();
   const code = String(Math.floor(1000 + Math.random() * 9000));
+  const ttlMinutes = Number(process.env.VERIFICATION_CODE_TTL_MINUTES || 10);
+  const expiresAt = new Date(Date.now() + ttlMinutes * 60 * 1000).toISOString();
 
   state.verification_codes = state.verification_codes.filter((item) => item.email !== normalizedEmail);
   state.verification_codes.push({
@@ -307,20 +309,32 @@ function createVerificationCode(email) {
     code,
     verified: false,
     created_at: nowIso(),
+    expires_at: expiresAt,
   });
   persist();
 
   return code;
 }
 
+function deleteVerificationCode(email) {
+  ensureState();
+  const normalizedEmail = String(email).trim().toLowerCase();
+  state.verification_codes = state.verification_codes.filter((item) => item.email !== normalizedEmail);
+  persist();
+}
+
 function verifyCode(email, code) {
   ensureState();
-  const target = state.verification_codes.find(
-    (item) => item.email === String(email).trim().toLowerCase() && item.code === String(code).trim()
-  );
+  const normalizedEmail = String(email).trim().toLowerCase();
+  const target = state.verification_codes.find((item) => item.email === normalizedEmail && item.code === String(code).trim());
 
   if (!target) {
     throw createError(400, '인증번호가 일치하지 않습니다.');
+  }
+
+  if (target.expires_at && new Date(target.expires_at).getTime() < Date.now()) {
+    deleteVerificationCode(normalizedEmail);
+    throw createError(400, '인증번호가 만료되었습니다. 다시 전송해 주세요.');
   }
 
   target.verified = true;
@@ -335,6 +349,11 @@ function ensureVerifiedEmail(email) {
 
   if (!target) {
     throw createError(400, '이메일 인증이 필요합니다.');
+  }
+
+  if (target.expires_at && new Date(target.expires_at).getTime() < Date.now()) {
+    deleteVerificationCode(email);
+    throw createError(400, '이메일 인증이 만료되었습니다. 다시 인증해 주세요.');
   }
 }
 
@@ -955,6 +974,7 @@ module.exports = {
   toUserSummary,
   getAccountStats,
   createVerificationCode,
+  deleteVerificationCode,
   verifyCode,
   createSession,
   getUserBySessionToken,

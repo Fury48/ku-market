@@ -6,6 +6,7 @@ const {
   createPost,
   createSession,
   createVerificationCode,
+  deleteVerificationCode,
   deletePost,
   deleteSession,
   findUserByEmail,
@@ -34,6 +35,7 @@ const {
   verifyCode,
 } = require('./database');
 const { getUrl, parseCookies, readJson, sendEmpty, sendJson } = require('./http');
+const { sendVerificationEmail } = require('./mailer');
 
 const PORT = Number(process.env.PORT || 4000);
 
@@ -125,8 +127,15 @@ async function handleRequest(req, res) {
       throw createError(400, '이미 등록된 이메일입니다.');
     }
 
-    const devCode = createVerificationCode(body.email);
-    sendJson(req, res, 200, { ok: true, devCode });
+    const verificationCode = createVerificationCode(body.email);
+    try {
+      await sendVerificationEmail(String(body.email).trim().toLowerCase(), verificationCode);
+    } catch (error) {
+      deleteVerificationCode(body.email);
+      throw createError(500, `인증번호 이메일 발송에 실패했습니다. ${error.message || '메일 설정을 확인해 주세요.'}`);
+    }
+
+    sendJson(req, res, 200, { ok: true });
     return;
   }
 

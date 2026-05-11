@@ -14,7 +14,6 @@ export default function RegisterScreen() {
   const { register } = useAuth();
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
-  const [devCode, setDevCode] = useState('');
   const [verified, setVerified] = useState(false);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -41,12 +40,13 @@ export default function RegisterScreen() {
         return;
       }
 
-      const response = await apiFetch<{ devCode?: string }>('/auth/send-code', {
+      await apiFetch<{ ok: boolean }>('/auth/send-code', {
         method: 'POST',
         body: JSON.stringify({ email }),
       });
-      setDevCode(response.devCode || '');
-      Alert.alert('인증번호 발송', response.devCode ? `개발용 인증번호: ${response.devCode}` : '메일함을 확인해 주세요.');
+      setVerified(false);
+      setCode('');
+      Alert.alert('인증번호 발송', '고려대학교 이메일로 인증번호를 보냈습니다. 메일함을 확인해 주세요.');
     } catch (error) {
       Alert.alert('인증번호 발송 실패', error instanceof Error ? error.message : '다시 시도해 주세요.');
     }
@@ -158,7 +158,6 @@ export default function RegisterScreen() {
         </Pressable>
 
         <Field label="인증번호" value={code} onChangeText={setCode} placeholder="4자리 숫자" keyboardType="numeric" />
-        {devCode ? <Text style={styles.devCode}>개발용 인증번호: {devCode}</Text> : null}
         <Pressable onPress={handleVerifyCode} style={styles.secondaryButton}>
           <Text style={styles.secondaryButtonText}>인증 확인</Text>
         </Pressable>
@@ -300,11 +299,6 @@ const styles = StyleSheet.create({
   secondaryButtonText: {
     color: palette.ink,
     fontSize: 14,
-    fontWeight: '700',
-  },
-  devCode: {
-    color: palette.burgundy,
-    fontSize: 13,
     fontWeight: '700',
   },
   imagePicker: {
