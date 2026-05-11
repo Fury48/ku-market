@@ -1,11 +1,9 @@
+import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { categoryLabels } from '@/lib/constants';
-import { formatHeadline, formatRelativeTime } from '@/lib/format';
-import { palette, radius, spacing } from '@/lib/theme';
+import { formatRelativeTime } from '@/lib/format';
+import { palette, spacing } from '@/lib/theme';
 import { PostSummary } from '@/types/models';
-import { Avatar } from '@/components/ui/avatar';
-import { Pill } from '@/components/ui/pill';
 
 type PostCardProps = {
   post: PostSummary;
@@ -13,114 +11,148 @@ type PostCardProps = {
 };
 
 export function PostCard({ post, onPress }: PostCardProps) {
-  const isActive = ['판매중', '모집중', '진행중', '일반'].includes(post.status);
+  const headline = getPostHeadline(post);
+  const meta = [post.location || post.subcategory, formatRelativeTime(post.createdAt)].filter(Boolean).join(' · ');
 
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => [styles.card, pressed && styles.pressed]}>
-      <Image source={{ uri: post.coverImageUrl }} style={styles.image} contentFit="contain" />
-      <View style={styles.content}>
-        <View style={styles.topRow}>
-          <Pill label={categoryLabels[post.category]} toned="soft" />
-          <Pill label={post.status} active={isActive} />
+    <Pressable onPress={onPress} style={({ pressed }) => [styles.item, pressed && styles.pressed]}>
+      <Image source={{ uri: post.coverImageUrl }} style={styles.image} contentFit="cover" />
+
+      <View style={styles.body}>
+        <View style={styles.titleRow}>
+          <Text style={styles.title} numberOfLines={2}>
+            {post.title}
+          </Text>
+          <Pressable hitSlop={10} style={styles.moreButton}>
+            <Ionicons name="ellipsis-vertical" size={21} color={palette.muted} />
+          </Pressable>
         </View>
-        <Text style={styles.title} numberOfLines={2}>
-          {post.title}
-        </Text>
-        <Text style={styles.headline}>
-          {formatHeadline(post.category, post.price, post.recruitmentCurrent, post.recruitmentTarget)}
-        </Text>
+
         <Text style={styles.meta} numberOfLines={1}>
-          {post.subcategory}
-          {post.location ? ` · ${post.location}` : ''}
+          {meta}
         </Text>
-        <View style={styles.authorRow}>
-          <Avatar uri={post.author.profileImageUrl} size={28} label={post.author.nickname} />
-          <View style={styles.authorBlock}>
-            <Text style={styles.authorText} numberOfLines={1}>
-              {post.author.nickname} · {post.author.department} {post.author.studentYear}학년
-            </Text>
-            <Text style={styles.timeText}>{formatRelativeTime(post.createdAt)}</Text>
-          </View>
-          <Text style={styles.countText}>찜 {post.likeCount} · 댓글 {post.commentCount}</Text>
+
+        <Text style={styles.headline} numberOfLines={1}>
+          {headline}
+        </Text>
+
+        <View style={styles.spacer} />
+
+        <View style={styles.reactionRow}>
+          {post.commentCount > 0 ? (
+            <View style={styles.reaction}>
+              <Ionicons name="chatbubble-ellipses" size={17} color={palette.muted} />
+              <Text style={styles.reactionText}>{post.commentCount}</Text>
+            </View>
+          ) : null}
+          {post.likeCount > 0 ? (
+            <View style={styles.reaction}>
+              <Ionicons name="heart" size={17} color={palette.muted} />
+              <Text style={styles.reactionText}>{post.likeCount}</Text>
+            </View>
+          ) : null}
         </View>
       </View>
     </Pressable>
   );
 }
 
+function getPostHeadline(post: PostSummary) {
+  if (post.category === 'market') {
+    if (!post.price) {
+      return '나눔';
+    }
+
+    return `${post.price.toLocaleString('ko-KR')}원`;
+  }
+
+  if (post.category === 'recruit') {
+    if (post.recruitmentCurrent !== null || post.recruitmentTarget !== null) {
+      return `${post.recruitmentCurrent ?? 0}/${post.recruitmentTarget ?? 0}명 모집`;
+    }
+
+    return '모집중';
+  }
+
+  if (post.category === 'promo') {
+    return post.status || '홍보중';
+  }
+
+  return post.subcategory || '커뮤니티';
+}
+
 const styles = StyleSheet.create({
-  card: {
+  item: {
     flexDirection: 'row',
-    padding: spacing.md,
-    borderRadius: radius.lg,
-    backgroundColor: palette.white,
-    borderWidth: 1,
+    minHeight: 148,
+    paddingVertical: 14,
+    backgroundColor: palette.cream,
+    borderBottomWidth: 1,
     borderColor: palette.border,
-    marginBottom: spacing.md,
-    shadowColor: palette.shadow,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.1,
-    shadowRadius: 16,
-    elevation: 3,
   },
   pressed: {
-    opacity: 0.94,
-    transform: [{ scale: 0.99 }],
+    opacity: 0.72,
   },
   image: {
-    width: 104,
-    height: 104,
-    borderRadius: radius.md,
+    width: 116,
+    height: 116,
+    borderRadius: 8,
     backgroundColor: palette.creamStrong,
-    borderWidth: 1,
-    borderColor: palette.border,
   },
-  content: {
+  body: {
     flex: 1,
+    minHeight: 116,
     marginLeft: spacing.md,
-    gap: 8,
   },
-  topRow: {
+  titleRow: {
     flexDirection: 'row',
-    gap: 8,
+    alignItems: 'flex-start',
+    gap: spacing.sm,
   },
   title: {
+    flex: 1,
     color: palette.ink,
-    fontSize: 16,
-    fontWeight: '700',
-    lineHeight: 22,
-  },
-  headline: {
-    color: palette.burgundy,
     fontSize: 18,
-    fontWeight: '800',
+    fontWeight: '700',
+    lineHeight: 24,
+  },
+  moreButton: {
+    width: 30,
+    height: 28,
+    alignItems: 'flex-end',
+    justifyContent: 'center',
   },
   meta: {
     color: palette.muted,
-    fontSize: 12,
+    fontSize: 14,
+    lineHeight: 20,
+    marginTop: 4,
   },
-  authorRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    marginTop: 2,
+  headline: {
+    color: palette.ink,
+    fontSize: 18,
+    fontWeight: '600',
+    lineHeight: 25,
+    marginTop: 7,
   },
-  authorBlock: {
+  spacer: {
     flex: 1,
   },
-  authorText: {
-    color: palette.ink,
-    fontSize: 12,
-    fontWeight: '600',
+  reactionRow: {
+    minHeight: 22,
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    gap: 12,
   },
-  timeText: {
-    color: palette.muted,
-    fontSize: 11,
-    marginTop: 2,
+  reaction: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
-  countText: {
+  reactionText: {
     color: palette.muted,
-    fontSize: 11,
-    fontWeight: '600',
+    fontSize: 15,
+    fontWeight: '700',
   },
 });
