@@ -7,7 +7,6 @@ import { buildQuery, apiFetch } from '@/lib/api';
 import {
   boardDescriptions,
   boardTitles,
-  mainTypeChips,
   subcategoryOptions,
 } from '@/lib/constants';
 import { palette, spacing } from '@/lib/theme';
@@ -37,6 +36,7 @@ export function BoardScreen({ board }: BoardScreenProps) {
   const [query, setQuery] = useState('');
   const [primary, setPrimary] = useState<'all' | PostCategory>(board === 'main' ? 'all' : board);
   const [secondary, setSecondary] = useState('all');
+  const [headerHeight, setHeaderHeight] = useState(0);
 
   const secondaryChips = useMemo(() => {
     if (board === 'main') {
@@ -51,11 +51,7 @@ export function BoardScreen({ board }: BoardScreenProps) {
   }, [board, primary]);
 
   const primaryChips = useMemo(() => {
-    if (board !== 'main') {
-      return [];
-    }
-
-    return mainTypeChips;
+    return [];
   }, [board]);
 
   const fetchPosts = useCallback(async () => {
@@ -97,13 +93,13 @@ export function BoardScreen({ board }: BoardScreenProps) {
   return (
     <SafeAreaView edges={['top', 'left', 'right']} style={styles.safeArea}>
       <View style={styles.container}>
-        <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={palette.burgundy} />}>
+        <View
+          style={styles.floatingHeader}
+          onLayout={(event) => setHeaderHeight(event.nativeEvent.layout.height)}>
           <SearchHeader
-            title={boardTitles[board]}
-            subtitle={boardDescriptions[board]}
+            title={board === 'main' ? 'KU-L' : boardTitles[board]}
+            titleLogo={board === 'main' ? require('../assets/images/tenrang1.png') : undefined}
+            subtitle={board === 'main' ? undefined : boardDescriptions[board]}
             query={query}
             onChangeQuery={setQuery}
             primaryChips={primaryChips}
@@ -118,7 +114,19 @@ export function BoardScreen({ board }: BoardScreenProps) {
             onSecondaryChange={setSecondary}
             rightAccessory={<NotificationBell />}
           />
+        </View>
 
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={[styles.scrollContent, { paddingTop: headerHeight + spacing.md }]}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              tintColor={palette.burgundy}
+              progressViewOffset={headerHeight}
+            />
+          }>
           {loading ? (
             <View style={styles.loadingWrap}>
               <ActivityIndicator color={palette.burgundy} />
@@ -149,12 +157,29 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  floatingHeader: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 10,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.md,
+    backgroundColor: palette.cream,
+    borderBottomWidth: 1,
+    borderBottomColor: palette.border,
+    shadowColor: palette.shadow,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.14,
+    shadowRadius: 12,
+    elevation: 6,
+  },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
     paddingBottom: spacing.lg,
   },
   loadingWrap: {

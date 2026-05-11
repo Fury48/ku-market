@@ -1,12 +1,13 @@
 import { ReactNode, useEffect, useRef, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Image, ImageSourcePropType, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { palette, radius, spacing } from '@/lib/theme';
 import { Pill } from '@/components/ui/pill';
 
 type SearchHeaderProps = {
   title: string;
-  subtitle: string;
+  subtitle?: string;
+  titleLogo?: ImageSourcePropType;
   query: string;
   onChangeQuery: (value: string) => void;
   primaryChips: { label: string; value: string }[];
@@ -21,6 +22,7 @@ type SearchHeaderProps = {
 export function SearchHeader({
   title,
   subtitle,
+  titleLogo,
   query,
   onChangeQuery,
   primaryChips,
@@ -50,8 +52,11 @@ export function SearchHeader({
     <View style={styles.wrap}>
       <View style={styles.titleRow}>
         <View style={styles.titleTextWrap}>
-          <Text style={styles.title}>{title}</Text>
-          <Text style={styles.subtitle}>{subtitle}</Text>
+          <View style={styles.titleContent}>
+            {titleLogo ? <Image source={titleLogo} style={styles.titleLogo} /> : null}
+            <Text style={styles.title}>{title}</Text>
+          </View>
+          {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
         </View>
 
         <View style={styles.actions}>
@@ -116,16 +121,25 @@ export function SearchHeader({
 const styles = StyleSheet.create({
   wrap: {
     gap: spacing.md,
-    marginBottom: spacing.md,
   },
   titleRow: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     justifyContent: 'space-between',
     gap: spacing.md,
   },
   titleTextWrap: {
     flex: 1,
+  },
+  titleContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  titleLogo: {
+    width: 70,
+    height: 70,
+    borderRadius: 8,
   },
   title: {
     color: palette.ink,

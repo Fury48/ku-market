@@ -791,7 +791,7 @@
       "post_id": 16,
       "type": "comment",
       "message": "동동도우님이 내 게시글에 댓글을 남겼어요.",
-      "read_at": null,
+      "read_at": "2026-05-11T06:54:54.613Z",
       "created_at": "2026-05-11T05:35:55.602Z"
     },
     {
@@ -801,7 +801,7 @@
       "post_id": 16,
       "type": "like",
       "message": "동동도우님이 내 게시글을 찜했어요.",
-      "read_at": null,
+      "read_at": "2026-05-11T06:54:54.613Z",
       "created_at": "2026-05-11T05:35:59.149Z"
     },
     {
@@ -811,7 +811,7 @@
       "post_id": 16,
       "type": "like",
       "message": "동동도우님이 내 게시글을 찜했어요.",
-      "read_at": null,
+      "read_at": "2026-05-11T06:54:54.613Z",
       "created_at": "2026-05-11T05:36:01.406Z"
     }
   ],
@@ -3015,16 +3015,16 @@
       "expires_at": "2026-06-10T04:53:26.395Z"
     },
     {
-      "token": "771a649d77eb1722b96e39ad96e755aaa868fcd0b8234e4c",
-      "user_id": 7,
-      "persisted": true,
-      "expires_at": "2026-06-10T04:57:51.518Z"
-    },
-    {
       "token": "5239269055d1caf83d44c1f30c897220c0f454e980bd276d",
       "user_id": 8,
       "persisted": true,
       "expires_at": "2026-06-10T05:34:19.279Z"
+    },
+    {
+      "token": "26ab7844f459bd50ee604b2331025c5b0852196fad9cdc0e",
+      "user_id": 7,
+      "persisted": true,
+      "expires_at": "2026-06-10T07:06:22.954Z"
     }
   ],
   "verification_codes": [
