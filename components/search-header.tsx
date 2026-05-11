@@ -1,5 +1,5 @@
-import { ReactNode } from 'react';
-import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ReactNode, useEffect, useRef, useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { palette, radius, spacing } from '@/lib/theme';
 import { Pill } from '@/components/ui/pill';
@@ -31,6 +31,21 @@ export function SearchHeader({
   onSecondaryChange,
   rightAccessory,
 }: SearchHeaderProps) {
+  const inputRef = useRef<TextInput>(null);
+  const [searchOpen, setSearchOpen] = useState(Boolean(query));
+
+  useEffect(() => {
+    if (searchOpen) {
+      const timer = setTimeout(() => inputRef.current?.focus(), 80);
+      return () => clearTimeout(timer);
+    }
+  }, [searchOpen]);
+
+  function closeSearch() {
+    onChangeQuery('');
+    setSearchOpen(false);
+  }
+
   return (
     <View style={styles.wrap}>
       <View style={styles.titleRow}>
@@ -38,19 +53,35 @@ export function SearchHeader({
           <Text style={styles.title}>{title}</Text>
           <Text style={styles.subtitle}>{subtitle}</Text>
         </View>
-        {rightAccessory}
+
+        <View style={styles.actions}>
+          <Pressable
+            accessibilityLabel="검색"
+            onPress={() => setSearchOpen((value) => !value)}
+            style={[styles.iconButton, (searchOpen || query) && styles.iconButtonActive]}>
+            <Ionicons name="search" size={22} color={searchOpen || query ? palette.white : palette.ink} />
+          </Pressable>
+          {rightAccessory}
+        </View>
       </View>
 
-      <View style={styles.searchBox}>
-        <Ionicons name="search" size={18} color={palette.muted} />
-        <TextInput
-          value={query}
-          onChangeText={onChangeQuery}
-          placeholder="제목이나 본문으로 검색"
-          placeholderTextColor={palette.muted}
-          style={styles.searchInput}
-        />
-      </View>
+      {searchOpen ? (
+        <View style={styles.searchBox}>
+          <Ionicons name="search" size={18} color={palette.muted} />
+          <TextInput
+            ref={inputRef}
+            value={query}
+            onChangeText={onChangeQuery}
+            placeholder="제목이나 본문으로 검색"
+            placeholderTextColor={palette.muted}
+            returnKeyType="search"
+            style={styles.searchInput}
+          />
+          <Pressable accessibilityLabel="검색 닫기" hitSlop={10} onPress={closeSearch} style={styles.closeButton}>
+            <Ionicons name="close" size={18} color={palette.muted} />
+          </Pressable>
+        </View>
+      ) : null}
 
       {primaryChips.length > 0 ? (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipScroll}>
@@ -85,7 +116,7 @@ export function SearchHeader({
 const styles = StyleSheet.create({
   wrap: {
     gap: spacing.md,
-    marginBottom: spacing.lg,
+    marginBottom: spacing.md,
   },
   titleRow: {
     flexDirection: 'row',
@@ -106,6 +137,25 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 20,
   },
+  actions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  iconButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: palette.white,
+    borderWidth: 1,
+    borderColor: palette.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconButtonActive: {
+    backgroundColor: palette.burgundy,
+    borderColor: palette.burgundy,
+  },
   searchBox: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -115,12 +165,19 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: palette.border,
     paddingHorizontal: 14,
-    paddingVertical: 14,
+    paddingVertical: 12,
   },
   searchInput: {
     flex: 1,
     color: palette.ink,
     fontSize: 14,
+    paddingVertical: 0,
+  },
+  closeButton: {
+    width: 28,
+    height: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   chipScroll: {
     gap: 8,
