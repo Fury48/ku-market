@@ -97,8 +97,8 @@ export function BoardScreen({ board }: BoardScreenProps) {
           style={styles.floatingHeader}
           onLayout={(event) => setHeaderHeight(event.nativeEvent.layout.height)}>
           <SearchHeader
-            title={board === 'main' ? 'KU-L' : boardTitles[board]}
-            titleLogo={board === 'main' ? require('../assets/images/tenrang1.png') : undefined}
+            title={board === 'main' ? '' : boardTitles[board]}
+            titleLogo={board === 'main' ? require('../assets/images/kul.png') : undefined}
             subtitle={board === 'main' ? undefined : boardDescriptions[board]}
             query={query}
             onChangeQuery={setQuery}

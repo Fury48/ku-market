@@ -137,8 +137,9 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   titleLogo: {
-    width: 70,
-    height: 70,
+    width: 140,
+    height: 50,
+    marginLeft: -17,
     borderRadius: 8,
   },
   title: {
