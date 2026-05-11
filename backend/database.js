@@ -28,6 +28,7 @@ function normalizeState(rawState) {
     post_images: Array.isArray(rawState?.post_images) ? rawState.post_images : [],
     post_likes: Array.isArray(rawState?.post_likes) ? rawState.post_likes : [],
     comments: Array.isArray(rawState?.comments) ? rawState.comments : [],
+    notifications: Array.isArray(rawState?.notifications) ? rawState.notifications : [],
     chat_rooms: Array.isArray(rawState?.chat_rooms) ? rawState.chat_rooms : [],
     messages: Array.isArray(rawState?.messages) ? rawState.messages : [],
     sessions: Array.isArray(rawState?.sessions) ? rawState.sessions : [],
@@ -213,6 +214,77 @@ function getPostById(postId) {
   }
 
   return post;
+}
+
+function toNotificationSummary(notification) {
+  const actor = getUserById(notification.actor_id);
+  const post = getPostById(notification.post_id);
+
+  return {
+    id: notification.id,
+    type: notification.type,
+    message: notification.message,
+    postId: post.id,
+    postTitle: post.title,
+    createdAt: notification.created_at,
+    readAt: notification.read_at || null,
+    actor: {
+      id: actor.id,
+      nickname: actor.nickname,
+      profileImageUrl: actor.profile_image_url,
+    },
+  };
+}
+
+function createPostNotification({ recipientId, actorId, post, type, message }) {
+  ensureState();
+
+  if (Number(recipientId) === Number(actorId)) {
+    return;
+  }
+
+  state.notifications.push({
+    id: nextId('notifications'),
+    recipient_id: Number(recipientId),
+    actor_id: Number(actorId),
+    post_id: post.id,
+    type,
+    message,
+    read_at: null,
+    created_at: nowIso(),
+  });
+}
+
+function getNotifications(userId) {
+  ensureState();
+  const notifications = state.notifications
+    .filter((notification) => notification.recipient_id === Number(userId))
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    .map(toNotificationSummary);
+
+  return {
+    notifications,
+    unreadCount: notifications.filter((notification) => !notification.readAt).length,
+  };
+}
+
+function markNotificationsRead(userId) {
+  ensureState();
+  const timestamp = nowIso();
+  let changed = false;
+
+  state.notifications.forEach((notification) => {
+    if (notification.recipient_id === Number(userId) && !notification.read_at) {
+      notification.read_at = timestamp;
+      changed = true;
+    }
+  });
+
+  if (changed) {
+    persist();
+  }
+
+  return getNotifications(userId);
 }
 
 function getAccountStats(userId) {
@@ -482,6 +554,7 @@ function deletePost(userId, postId) {
   state.post_images = state.post_images.filter((item) => item.post_id !== post.id);
   state.post_likes = state.post_likes.filter((item) => item.post_id !== post.id);
   state.comments = state.comments.filter((item) => item.post_id !== post.id);
+  state.notifications = state.notifications.filter((item) => item.post_id !== post.id);
   state.chat_rooms = state.chat_rooms.filter((item) => item.post_id !== post.id);
   state.messages = state.messages.filter((item) => !roomIds.includes(item.room_id));
   persist();
@@ -489,7 +562,7 @@ function deletePost(userId, postId) {
 
 function toggleLike(userId, postId) {
   ensureState();
-  getPostById(postId);
+  const post = getPostById(postId);
 
   const existing = state.post_likes.find(
     (like) => like.post_id === Number(postId) && like.user_id === Number(userId)
@@ -503,6 +576,14 @@ function toggleLike(userId, postId) {
       post_id: Number(postId),
       user_id: Number(userId),
       created_at: nowIso(),
+    });
+    const actor = getUserById(userId);
+    createPostNotification({
+      recipientId: post.author_id,
+      actorId: userId,
+      post,
+      type: 'like',
+      message: `${actor.nickname}님이 내 게시글을 찜했어요.`,
     });
   }
 
@@ -524,6 +605,14 @@ function addComment(userId, postId, content) {
     user_id: Number(userId),
     content: String(content).trim(),
     created_at: nowIso(),
+  });
+  const actor = getUserById(userId);
+  createPostNotification({
+    recipientId: post.author_id,
+    actorId: userId,
+    post,
+    type: 'comment',
+    message: `${actor.nickname}님이 내 게시글에 댓글을 남겼어요.`,
   });
   post.updated_at = nowIso();
   persist();
@@ -828,6 +917,7 @@ function getSchemaMetadata() {
       post_images: state.post_images.length,
       post_likes: state.post_likes.length,
       comments: state.comments.length,
+      notifications: state.notifications.length,
       chat_rooms: state.chat_rooms.length,
       messages: state.messages.length,
       sessions: state.sessions.length,
@@ -873,6 +963,8 @@ module.exports = {
   getPostDetail,
   getLikedPosts,
   getMyPosts,
+  getNotifications,
+  markNotificationsRead,
   createPost,
   updatePost,
   deletePost,

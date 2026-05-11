@@ -19,10 +19,12 @@ const {
   getHealth,
   getLikedPosts,
   getMyPosts,
+  getNotifications,
   getPostDetail,
   getSchemaMetadata,
   getUserBySessionToken,
   loginUser,
+  markNotificationsRead,
   openChatRoom,
   registerUser,
   toUserSummary,
@@ -196,6 +198,18 @@ async function handleRequest(req, res) {
   if (req.method === 'GET' && pathname === '/api/account/posts') {
     const { user } = requireUser(req);
     sendJson(req, res, 200, { posts: getMyPosts(user.id) });
+    return;
+  }
+
+  if (req.method === 'GET' && pathname === '/api/notifications') {
+    const { user } = requireUser(req);
+    sendJson(req, res, 200, getNotifications(user.id));
+    return;
+  }
+
+  if (req.method === 'POST' && pathname === '/api/notifications/read') {
+    const { user } = requireUser(req);
+    sendJson(req, res, 200, markNotificationsRead(user.id));
     return;
   }
 

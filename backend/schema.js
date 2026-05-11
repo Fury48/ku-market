@@ -67,6 +67,19 @@ const tableSchemas = {
       { name: 'created_at', type: 'TEXT', nullable: false },
     ],
   },
+  notifications: {
+    primaryKey: 'id',
+    columns: [
+      { name: 'id', type: 'INTEGER', nullable: false },
+      { name: 'recipient_id', type: 'INTEGER', nullable: false, references: 'users.id' },
+      { name: 'actor_id', type: 'INTEGER', nullable: false, references: 'users.id' },
+      { name: 'post_id', type: 'INTEGER', nullable: false, references: 'posts.id' },
+      { name: 'type', type: 'TEXT', nullable: false },
+      { name: 'message', type: 'TEXT', nullable: false },
+      { name: 'read_at', type: 'TEXT', nullable: true },
+      { name: 'created_at', type: 'TEXT', nullable: false },
+    ],
+  },
   chat_rooms: {
     primaryKey: 'id',
     columns: [
@@ -118,6 +131,7 @@ function createEmptyState() {
       postImages: 1,
       postLikes: 1,
       comments: 1,
+      notifications: 1,
       chatRooms: 1,
       messages: 1,
     },
@@ -126,6 +140,7 @@ function createEmptyState() {
     post_images: [],
     post_likes: [],
     comments: [],
+    notifications: [],
     chat_rooms: [],
     messages: [],
     sessions: [],
@@ -186,6 +201,17 @@ CREATE TABLE comments (
   post_id INTEGER NOT NULL REFERENCES posts(id),
   user_id INTEGER NOT NULL REFERENCES users(id),
   content TEXT NOT NULL,
+  created_at TEXT NOT NULL
+);
+
+CREATE TABLE notifications (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  recipient_id INTEGER NOT NULL REFERENCES users(id),
+  actor_id INTEGER NOT NULL REFERENCES users(id),
+  post_id INTEGER NOT NULL REFERENCES posts(id),
+  type TEXT NOT NULL,
+  message TEXT NOT NULL,
+  read_at TEXT,
   created_at TEXT NOT NULL
 );
 

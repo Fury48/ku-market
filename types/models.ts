@@ -111,6 +111,23 @@ export interface ChatRoomDetail {
   messages: ChatMessage[];
 }
 
+export type NotificationType = 'like' | 'comment';
+
+export interface NotificationItem {
+  id: number;
+  type: NotificationType;
+  message: string;
+  postId: number;
+  postTitle: string;
+  createdAt: string;
+  readAt: string | null;
+  actor: {
+    id: number;
+    nickname: string;
+    profileImageUrl: string;
+  };
+}
+
 export interface FeedResponse {
   posts: PostSummary[];
 }

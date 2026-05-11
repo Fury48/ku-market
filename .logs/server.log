@@ -1,0 +1,5 @@
+
+> horang-market@1.0.0 server C:\Users\gamin\Desktop\PythoWorkspace\ku-market
+> node ./backend/server.js
+
+Horang Market API listening on http://127.0.0.1:4000

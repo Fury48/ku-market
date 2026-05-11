@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { palette, radius, spacing } from '@/lib/theme';
 import { ChatRoomRow } from '@/components/chat-room-row';
 import { useChatRooms } from '@/providers/chat-rooms-provider';
+import { NotificationBell } from '@/components/notification-bell';
 
 export default function ChatsScreen() {
   const router = useRouter();
@@ -23,6 +24,9 @@ export default function ChatsScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
+      <View style={styles.bellWrap}>
+        <NotificationBell />
+      </View>
       <ScrollView
         contentContainerStyle={styles.container}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={palette.burgundy} />}>
@@ -66,6 +70,12 @@ const styles = StyleSheet.create({
   container: {
     padding: spacing.lg,
     paddingBottom: spacing.xxl,
+  },
+  bellWrap: {
+    position: 'absolute',
+    top: spacing.lg,
+    right: spacing.lg,
+    zIndex: 5,
   },
   title: {
     color: palette.ink,

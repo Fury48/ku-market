@@ -4,12 +4,14 @@ import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 import { AuthProvider } from '@/providers/auth-provider';
 import { ChatRoomsProvider } from '@/providers/chat-rooms-provider';
+import { NotificationsProvider } from '@/providers/notifications-provider';
 import { palette } from '@/lib/theme';
 
 export default function RootLayout() {
   return (
     <AuthProvider>
-      <ChatRoomsProvider>
+      <NotificationsProvider>
+        <ChatRoomsProvider>
         <ThemeProvider
           value={{
             ...DefaultTheme,
@@ -33,10 +35,12 @@ export default function RootLayout() {
             <Stack.Screen name="account/liked" />
             <Stack.Screen name="account/mine" />
             <Stack.Screen name="account/edit" />
+            <Stack.Screen name="notifications" />
           </Stack>
           <StatusBar style="light" />
         </ThemeProvider>
-      </ChatRoomsProvider>
+        </ChatRoomsProvider>
+      </NotificationsProvider>
     </AuthProvider>
   );
 }

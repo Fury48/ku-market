@@ -5,9 +5,10 @@
     "posts": 19,
     "postImages": 23,
     "postLikes": 9,
-    "comments": 15,
+    "comments": 16,
+    "notifications": 2,
     "chatRooms": 6,
-    "messages": 163
+    "messages": 164
   },
   "users": [
     {
@@ -451,7 +452,7 @@
         "동훈이일걸"
       ],
       "created_at": "2026-04-30T07:44:33.752Z",
-      "updated_at": "2026-04-30T07:45:00.360Z"
+      "updated_at": "2026-05-11T04:58:07.824Z"
     },
     {
       "id": 18,
@@ -737,6 +738,25 @@
       "user_id": 1,
       "content": "싸지박자",
       "created_at": "2026-05-07T07:39:33.618Z"
+    },
+    {
+      "id": 15,
+      "post_id": 16,
+      "user_id": 7,
+      "content": "동카스",
+      "created_at": "2026-05-11T04:58:07.824Z"
+    }
+  ],
+  "notifications": [
+    {
+      "id": 1,
+      "recipient_id": 1,
+      "actor_id": 7,
+      "post_id": 16,
+      "type": "comment",
+      "message": "고구맛도리님이 내 게시글에 댓글을 남겼어요.",
+      "read_at": "2026-05-11T04:58:11.564Z",
+      "created_at": "2026-05-11T04:58:07.824Z"
     }
   ],
   "chat_rooms": [
@@ -2810,7 +2830,8 @@
       "content": "ㅠㅠ",
       "image_url": null,
       "read_by": [
-        7
+        7,
+        1
       ],
       "created_at": "2026-05-07T08:27:38.980Z"
     },
@@ -2873,6 +2894,18 @@
         7
       ],
       "created_at": "2026-05-07T08:28:13.957Z"
+    },
+    {
+      "id": 163,
+      "room_id": 4,
+      "sender_id": 1,
+      "client_id": "client-1778475220645-7p0i0cuney7",
+      "content": "야",
+      "image_url": null,
+      "read_by": [
+        1
+      ],
+      "created_at": "2026-05-11T04:53:40.648Z"
     }
   ],
   "sessions": [
@@ -2905,6 +2938,24 @@
       "user_id": 1,
       "persisted": true,
       "expires_at": "2026-06-06T07:24:57.558Z"
+    },
+    {
+      "token": "78fb0afddc7f3002f2c74ad6b623a71d11d13dea8121a20c",
+      "user_id": 1,
+      "persisted": true,
+      "expires_at": "2026-06-10T04:53:26.395Z"
+    },
+    {
+      "token": "340a31ffa33cc9921e97b0e1bd2e43bc357fb946db208d77",
+      "user_id": 1,
+      "persisted": true,
+      "expires_at": "2026-06-10T04:56:18.835Z"
+    },
+    {
+      "token": "771a649d77eb1722b96e39ad96e755aaa868fcd0b8234e4c",
+      "user_id": 7,
+      "persisted": true,
+      "expires_at": "2026-06-10T04:57:51.518Z"
     }
   ],
   "verification_codes": [

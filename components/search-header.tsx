@@ -1,3 +1,4 @@
+import { ReactNode } from 'react';
 import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { palette, radius, spacing } from '@/lib/theme';
@@ -14,6 +15,7 @@ type SearchHeaderProps = {
   secondaryChips: { label: string; value: string }[];
   secondaryValue: string;
   onSecondaryChange: (value: string) => void;
+  rightAccessory?: ReactNode;
 };
 
 export function SearchHeader({
@@ -27,11 +29,17 @@ export function SearchHeader({
   secondaryChips,
   secondaryValue,
   onSecondaryChange,
+  rightAccessory,
 }: SearchHeaderProps) {
   return (
     <View style={styles.wrap}>
-      <Text style={styles.title}>{title}</Text>
-      <Text style={styles.subtitle}>{subtitle}</Text>
+      <View style={styles.titleRow}>
+        <View style={styles.titleTextWrap}>
+          <Text style={styles.title}>{title}</Text>
+          <Text style={styles.subtitle}>{subtitle}</Text>
+        </View>
+        {rightAccessory}
+      </View>
 
       <View style={styles.searchBox}>
         <Ionicons name="search" size={18} color={palette.muted} />
@@ -78,6 +86,15 @@ const styles = StyleSheet.create({
   wrap: {
     gap: spacing.md,
     marginBottom: spacing.lg,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: spacing.md,
+  },
+  titleTextWrap: {
+    flex: 1,
   },
   title: {
     color: palette.ink,

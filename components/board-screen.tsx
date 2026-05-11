@@ -15,6 +15,7 @@ import { BoardType, FeedResponse, PostCategory, PostSummary } from '@/types/mode
 import { FloatingWriteButton } from '@/components/ui/floating-write-button';
 import { PostCard } from '@/components/post-card';
 import { SearchHeader } from '@/components/search-header';
+import { NotificationBell } from '@/components/notification-bell';
 
 type BoardScreenProps = {
   board: BoardType;
@@ -114,6 +115,7 @@ export function BoardScreen({ board }: BoardScreenProps) {
             secondaryChips={secondaryChips}
             secondaryValue={secondary}
             onSecondaryChange={setSecondary}
+            rightAccessory={<NotificationBell />}
           />
 
           {loading ? (
