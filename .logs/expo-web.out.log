@@ -1,0 +1,33 @@
+env: load .env
+env: export APP_NAME SMTP_HOST SMTP_PORT SMTP_SECURE EMAIL_USER EMAIL_PASS MAIL_FROM VERIFICATION_CODE_TTL_MINUTES
+Starting project at C:\Users\gamin\Desktop\PythoWorkspace\ku-market
+React Compiler enabled
+Starting Metro Bundler
+Waiting on http://localhost:8082
+Logs for your project will appear below.
+Web node_modules\expo-router\entry.js ▓▓▓▓▓░░░░░░░░░░░ 34.6% (251/427)
+λ node_modules\expo-router\node\render.js ▓▓▓▓▓▓▓▓▓░░░░░░░ 61.9% (443/563)
+Web node_modules\expo-router\entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+λ node_modules\expo-router\node\render.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+λ Bundled 4969ms node_modules\expo-router\node\render.js (1333 modules)
+λ Bundled 4242ms node_modules\expo-router\node\render.js (1 module)
+Web node_modules\expo-router\entry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 99.8% (1318/1322)
+Web node_modules\expo-router\entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundled 8824ms node_modules\expo-router\entry.js (1322 modules)
+Web Bundled 8045ms node_modules\expo-router\entry.js (1 module)
+Web node_modules\expo-router\entry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░ 89.3% (755/799)
+Web Bundled 3127ms node_modules\expo-router\entry.js (1323 modules)
+ LOG  [web] Logs will appear in the browser console
+Web node_modules\expo-router\entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+λ Bundled 60ms node_modules\expo-router\node\render.js (1 module)
+Web Bundled 635ms node_modules\expo-router\entry.js (1 module)
+Web node_modules\expo-router\entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+λ Bundled 97ms node_modules\expo-router\node\render.js (1 module)
+Web Bundled 1348ms node_modules\expo-router\entry.js (1 module)
+Web Bundled 89ms node_modules\expo-router\entry.js (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web node_modules\expo-router\entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+λ Bundled 95ms node_modules\expo-router\node\render.js (1 module)
+Web Bundled 1275ms node_modules\expo-router\entry.js (1 module)
+Web Bundled 99ms node_modules\expo-router\entry.js (1 module)
+ LOG  [web] Logs will appear in the browser console
