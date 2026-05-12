@@ -9,7 +9,6 @@ import { buildQuery, apiFetch } from '@/lib/api';
 import { formatRelativeTime } from '@/lib/format';
 import { palette, spacing } from '@/lib/theme';
 import { FeedResponse, PostCategory, PostSummary } from '@/types/models';
-import { FloatingWriteButton } from '@/components/ui/floating-write-button';
 import { SearchHeader } from '@/components/search-header';
 import { NotificationBell } from '@/components/notification-bell';
 
@@ -128,8 +127,6 @@ export default function MainBoardScreen() {
             ))
           )}
         </View>
-
-        <FloatingWriteButton onPress={() => router.push('/post/compose?board=main' as Href)} />
       </View>
     </SafeAreaView>
   );
@@ -272,9 +269,9 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     color: palette.ink,
-    fontSize: 21,
-    fontWeight: '700',
-    lineHeight: 28,
+    fontSize: 19,
+    fontWeight: '500',
+    lineHeight: 26,
   },
   sectionLink: {
     width: 34,
