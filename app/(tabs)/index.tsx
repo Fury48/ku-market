@@ -343,9 +343,9 @@ const styles = StyleSheet.create({
   },
   postTitle: {
     color: palette.ink,
-    fontSize: 18,
-    fontWeight: '800',
-    lineHeight: 22,
+    fontSize: 16,
+    fontWeight: '600',
+    lineHeight: 20,
   },
   postMeta: {
     color: palette.muted,
@@ -361,9 +361,9 @@ const styles = StyleSheet.create({
   postHeadline: {
     flex: 1,
     color: palette.ink,
-    fontSize: 18,
-    fontWeight: '800',
-    lineHeight: 22,
+    fontSize: 16,
+    fontWeight: '600',
+    lineHeight: 20,
   },
   reactionRow: {
     flexDirection: 'row',
