@@ -215,7 +215,7 @@ export default function PostDetailScreen() {
                   <Ionicons name="chevron-back" size={22} color={palette.ink} />
                 </Pressable>
                 <Pressable onPress={openMoreActions} style={styles.heroButton}>
-                  <Ionicons name="ellipsis-vertical" size={18} color={palette.ink} />
+                  <Ionicons name="ellipsis-vertical" size={20} color={palette.ink} />
                 </Pressable>
               </View>
             </View>
@@ -383,7 +383,9 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.92)',
+    backgroundColor: 'rgba(23,25,29,0.82)',
+    borderWidth: 1,
+    borderColor: 'rgba(241,238,240,0.24)',
     alignItems: 'center',
     justifyContent: 'center',
   },
