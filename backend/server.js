@@ -21,9 +21,11 @@ const {
   getLikedPosts,
   getMyPosts,
   getNotifications,
+  getPostCoverImage,
   getPostDetail,
   getSchemaMetadata,
   getUserBySessionToken,
+  getUserProfileImage,
   loginUser,
   markNotificationsRead,
   openChatRoom,
@@ -34,7 +36,7 @@ const {
   updateProfile,
   verifyCode,
 } = require('./database');
-const { getUrl, parseCookies, readJson, sendEmpty, sendJson } = require('./http');
+const { getCorsHeaders, getUrl, parseCookies, readJson, sendEmpty, sendJson } = require('./http');
 const { sendVerificationEmail } = require('./mailer');
 
 const PORT = Number(process.env.PORT || 4000);
@@ -55,6 +57,70 @@ function buildSessionCookie(token, maxAgeSeconds = 60 * 60 * 24 * 30) {
 
 function buildExpiredCookie() {
   return 'horang_session=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0';
+}
+
+function getRequestBaseUrl(req) {
+  const host = req.headers.host || `127.0.0.1:${PORT}`;
+  return `http://${host}`;
+}
+
+function compactPostImages(req, posts) {
+  const baseUrl = getRequestBaseUrl(req);
+
+  return posts.map((post) => ({
+    ...post,
+    coverImageUrl: post.coverImageUrl ? `${baseUrl}/api/posts/${post.id}/cover-image` : '',
+    author: {
+      ...post.author,
+      profileImageUrl: post.author.profileImageUrl ? `${baseUrl}/api/users/${post.author.id}/profile-image` : '',
+    },
+  }));
+}
+
+function decodeDataUrl(dataUrl) {
+  const match = String(dataUrl || '').match(/^data:([^,]*),(.*)$/s);
+
+  if (!match) {
+    return null;
+  }
+
+  const metadata = match[1] || 'application/octet-stream';
+  const encodedBody = match[2] || '';
+  const mimeType = metadata.split(';')[0] || 'application/octet-stream';
+  const isBase64 = metadata.split(';').includes('base64');
+
+  return {
+    mimeType,
+    body: isBase64 ? Buffer.from(encodedBody, 'base64') : Buffer.from(decodeURIComponent(encodedBody), 'utf8'),
+  };
+}
+
+function sendImage(req, res, imageUrl) {
+  if (!imageUrl) {
+    throw createError(404, 'Image not found.');
+  }
+
+  if (/^https?:\/\//i.test(imageUrl)) {
+    res.writeHead(302, {
+      ...getCorsHeaders(req),
+      Location: imageUrl,
+      'Cache-Control': 'public, max-age=86400',
+    });
+    res.end();
+    return;
+  }
+
+  const decoded = decodeDataUrl(imageUrl);
+  if (!decoded) {
+    throw createError(404, 'Image not found.');
+  }
+
+  res.writeHead(200, {
+    ...getCorsHeaders(req),
+    'Content-Type': decoded.mimeType,
+    'Cache-Control': 'public, max-age=31536000, immutable',
+  });
+  res.end(decoded.body);
 }
 
 function requireUser(req) {
@@ -194,19 +260,19 @@ async function handleRequest(req, res) {
       subcategory: url.searchParams.get('subcategory') || null,
       query: url.searchParams.get('query') || null,
     });
-    sendJson(req, res, 200, { posts });
+    sendJson(req, res, 200, { posts: compactPostImages(req, posts) });
     return;
   }
 
   if (req.method === 'GET' && pathname === '/api/account/liked') {
     const { user } = requireUser(req);
-    sendJson(req, res, 200, { posts: getLikedPosts(user.id) });
+    sendJson(req, res, 200, { posts: compactPostImages(req, getLikedPosts(user.id)) });
     return;
   }
 
   if (req.method === 'GET' && pathname === '/api/account/posts') {
     const { user } = requireUser(req);
-    sendJson(req, res, 200, { posts: getMyPosts(user.id) });
+    sendJson(req, res, 200, { posts: compactPostImages(req, getMyPosts(user.id)) });
     return;
   }
 
@@ -233,6 +299,18 @@ async function handleRequest(req, res) {
     const { user } = requireUser(req);
     const body = await readJson(req);
     sendJson(req, res, 201, { post: createPost(user.id, body) });
+    return;
+  }
+
+  const coverImageMatch = pathname.match(/^\/api\/posts\/(\d+)\/cover-image$/);
+  if (coverImageMatch && req.method === 'GET') {
+    sendImage(req, res, getPostCoverImage(Number(coverImageMatch[1])));
+    return;
+  }
+
+  const profileImageMatch = pathname.match(/^\/api\/users\/(\d+)\/profile-image$/);
+  if (profileImageMatch && req.method === 'GET') {
+    sendImage(req, res, getUserProfileImage(Number(profileImageMatch[1])));
     return;
   }
 

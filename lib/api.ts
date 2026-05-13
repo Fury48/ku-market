@@ -16,7 +16,13 @@ function resolveHost() {
   const hostUri = Constants.expoConfig?.hostUri ?? Constants.expoGoConfig?.debuggerHost ?? '';
 
   if (hostUri) {
-    return hostUri.split(':')[0];
+    const host = hostUri.split(':')[0];
+
+    if (Platform.OS === 'web' && host === 'localhost') {
+      return '127.0.0.1';
+    }
+
+    return host;
   }
 
   if (Platform.OS === 'android') {
@@ -24,7 +30,7 @@ function resolveHost() {
   }
 
   if (Platform.OS === 'web') {
-    return 'localhost';
+    return '127.0.0.1';
   }
 
   return '127.0.0.1';

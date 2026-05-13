@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter, type Href } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
@@ -37,6 +37,7 @@ export function BoardScreen({ board }: BoardScreenProps) {
   const [primary, setPrimary] = useState<'all' | PostCategory>(board === 'main' ? 'all' : board);
   const [secondary, setSecondary] = useState('all');
   const [headerHeight, setHeaderHeight] = useState(0);
+  const hasLoadedRef = useRef(false);
 
   const secondaryChips = useMemo(() => {
     if (board === 'main') {
@@ -52,7 +53,7 @@ export function BoardScreen({ board }: BoardScreenProps) {
 
   const primaryChips = useMemo(() => {
     return [];
-  }, [board]);
+  }, []);
 
   const fetchPosts = useCallback(async () => {
     const params =
@@ -60,31 +61,54 @@ export function BoardScreen({ board }: BoardScreenProps) {
         ? { board, type: primary === 'all' ? null : primary, subcategory: secondary === 'all' ? null : secondary, query }
         : { board, subcategory: secondary === 'all' ? null : secondary, query };
 
-    const response = await apiFetch<FeedResponse>(`/feed${buildQuery(params)}`);
-    setPosts(response.posts);
+    return apiFetch<FeedResponse>(`/feed${buildQuery(params)}`);
   }, [board, primary, query, secondary]);
-
-  useEffect(() => {
-    setLoading(true);
-    fetchPosts()
-      .catch(() => {
-        setPosts([]);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-  }, [fetchPosts]);
 
   useFocusEffect(
     useCallback(() => {
-      fetchPosts().catch(() => undefined);
+      let isActive = true;
+
+      if (!hasLoadedRef.current) {
+        setLoading(true);
+      }
+
+      fetchPosts()
+        .then((response) => {
+          if (!isActive) {
+            return;
+          }
+
+          setPosts(response.posts);
+        })
+        .catch(() => {
+          if (!isActive) {
+            return;
+          }
+
+          setPosts([]);
+        })
+        .finally(() => {
+          if (!isActive) {
+            return;
+          }
+
+          hasLoadedRef.current = true;
+          setLoading(false);
+        });
+
+      return () => {
+        isActive = false;
+      };
     }, [fetchPosts])
   );
 
   async function handleRefresh() {
     setRefreshing(true);
     try {
-      await fetchPosts();
+      const response = await fetchPosts();
+      setPosts(response.posts);
+    } catch {
+      setPosts([]);
     } finally {
       setRefreshing(false);
     }

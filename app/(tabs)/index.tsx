@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   NativeScrollEvent,
@@ -53,42 +53,62 @@ export default function MainBoardScreen() {
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState('');
   const [headerHeight, setHeaderHeight] = useState(0);
+  const hasLoadedRef = useRef(false);
 
   const activeHotSection = MAIN_SECTIONS[activeHotIndex] ?? MAIN_SECTIONS[0];
 
   const fetchHomePosts = useCallback(async () => {
-    const [hotEntries, recentResponse] = await Promise.all([
-      Promise.all(
-        MAIN_SECTIONS.map(async (section) => {
-          const response = await apiFetch<FeedResponse>(
-            `/feed${buildQuery({ board: 'main', type: section.key, query })}`
-          );
+    const response = await apiFetch<FeedResponse>(`/feed${buildQuery({ board: 'main', query })}`);
+    const posts = response.posts;
+    const hotEntries = MAIN_SECTIONS.map((section) => {
+      const sectionPosts = posts.filter((post) => post.category === section.key);
 
-          return [section.key, getPopularPosts(response.posts)] as const;
-        })
-      ),
-      apiFetch<FeedResponse>(`/feed${buildQuery({ board: 'main', query })}`),
-    ]);
+      return [section.key, getPopularPosts(sectionPosts)] as const;
+    });
 
-    setHotPosts(Object.fromEntries(hotEntries) as Record<MainBoardKey, PostSummary[]>);
-    setRecentPosts(recentResponse.posts.slice(0, RECENT_POST_COUNT));
+    return {
+      hotPosts: Object.fromEntries(hotEntries) as Record<MainBoardKey, PostSummary[]>,
+      recentPosts: posts.slice(0, RECENT_POST_COUNT),
+    };
   }, [query]);
-
-  useEffect(() => {
-    setLoading(true);
-    fetchHomePosts()
-      .catch(() => {
-        setHotPosts(EMPTY_SECTION_POSTS);
-        setRecentPosts([]);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-  }, [fetchHomePosts]);
 
   useFocusEffect(
     useCallback(() => {
-      fetchHomePosts().catch(() => undefined);
+      let isActive = true;
+
+      if (!hasLoadedRef.current) {
+        setLoading(true);
+      }
+
+      fetchHomePosts()
+        .then((nextState) => {
+          if (!isActive) {
+            return;
+          }
+
+          setHotPosts(nextState.hotPosts);
+          setRecentPosts(nextState.recentPosts);
+        })
+        .catch(() => {
+          if (!isActive) {
+            return;
+          }
+
+          setHotPosts(EMPTY_SECTION_POSTS);
+          setRecentPosts([]);
+        })
+        .finally(() => {
+          if (!isActive) {
+            return;
+          }
+
+          hasLoadedRef.current = true;
+          setLoading(false);
+        });
+
+      return () => {
+        isActive = false;
+      };
     }, [fetchHomePosts])
   );
 

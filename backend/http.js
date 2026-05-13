@@ -74,6 +74,7 @@ function parseCookies(req) {
 
 module.exports = {
   getUrl,
+  getCorsHeaders,
   sendJson,
   sendEmpty,
   readJson,

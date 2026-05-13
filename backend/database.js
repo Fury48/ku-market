@@ -116,6 +116,10 @@ function toUserSummary(user) {
   };
 }
 
+function getUserProfileImage(userId) {
+  return getUserById(userId)?.profile_image_url || '';
+}
+
 function toAuthorSummary(user) {
   return {
     id: user.id,
@@ -132,6 +136,10 @@ function getPostImages(postId) {
   return state.post_images
     .filter((image) => image.post_id === Number(postId))
     .sort((a, b) => a.sort_order - b.sort_order);
+}
+
+function getPostCoverImage(postId) {
+  return getPostImages(postId)[0]?.image_url || '';
 }
 
 function getPostLikeCount(postId) {
@@ -978,9 +986,11 @@ module.exports = {
   verifyCode,
   createSession,
   getUserBySessionToken,
+  getUserProfileImage,
   deleteSession,
   getFeed,
   getPostDetail,
+  getPostCoverImage,
   getLikedPosts,
   getMyPosts,
   getNotifications,
