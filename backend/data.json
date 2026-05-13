@@ -2980,12 +2980,6 @@
   ],
   "sessions": [
     {
-      "token": "8ecd0982b142ac1665132d7f2d5bcc0c7fd7699aae6d136e",
-      "user_id": 1,
-      "persisted": true,
-      "expires_at": "2026-05-12T07:29:06.334Z"
-    },
-    {
       "token": "ba604e2a5e55e63feef195f223e8b29503ad313358dcfec6",
       "user_id": 1,
       "persisted": true,
@@ -3020,6 +3014,12 @@
       "user_id": 1,
       "persisted": true,
       "expires_at": "2026-06-10T15:10:30.266Z"
+    },
+    {
+      "token": "4cd70c1d312d609eeaf15a1e79533b5e13ea404664d829a0",
+      "user_id": 1,
+      "persisted": true,
+      "expires_at": "2026-06-12T01:30:55.605Z"
     }
   ],
   "verification_codes": [

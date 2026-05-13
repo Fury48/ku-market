@@ -1,5 +1,14 @@
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { type Href, useRouter } from 'expo-router';
@@ -16,15 +25,18 @@ type MainBoardKey = Extract<PostCategory, 'market' | 'recruit' | 'promo'>;
 
 type MainSection = {
   key: MainBoardKey;
-  title: string;
+  hotLabel: string;
   href: Href;
 };
 
 const MAIN_SECTIONS: MainSection[] = [
-  { key: 'market', title: '중고 게시판', href: '/(tabs)/market' as Href },
-  { key: 'recruit', title: '구인 게시판', href: '/(tabs)/recruit' as Href },
-  { key: 'promo', title: '홍보 게시판', href: '/(tabs)/promo' as Href },
+  { key: 'market', hotLabel: '중고글', href: '/(tabs)/market' as Href },
+  { key: 'recruit', hotLabel: '구인글', href: '/(tabs)/recruit' as Href },
+  { key: 'promo', hotLabel: '홍보글', href: '/(tabs)/promo' as Href },
 ];
+
+const HOT_POST_COUNT = 2;
+const RECENT_POST_COUNT = 5;
 
 const EMPTY_SECTION_POSTS: Record<MainBoardKey, PostSummary[]> = {
   market: [],
@@ -34,41 +46,60 @@ const EMPTY_SECTION_POSTS: Record<MainBoardKey, PostSummary[]> = {
 
 export default function MainBoardScreen() {
   const router = useRouter();
-  const [sectionPosts, setSectionPosts] = useState<Record<MainBoardKey, PostSummary[]>>(EMPTY_SECTION_POSTS);
+  const [hotPosts, setHotPosts] = useState<Record<MainBoardKey, PostSummary[]>>(EMPTY_SECTION_POSTS);
+  const [recentPosts, setRecentPosts] = useState<PostSummary[]>([]);
+  const [activeHotIndex, setActiveHotIndex] = useState(0);
+  const [carouselWidth, setCarouselWidth] = useState(0);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState('');
   const [headerHeight, setHeaderHeight] = useState(0);
 
-  const fetchRecentPosts = useCallback(async () => {
-    const entries = await Promise.all(
-      MAIN_SECTIONS.map(async (section) => {
-        const response = await apiFetch<FeedResponse>(
-          `/feed${buildQuery({ board: 'main', type: section.key, query })}`
-        );
+  const activeHotSection = MAIN_SECTIONS[activeHotIndex] ?? MAIN_SECTIONS[0];
 
-        return [section.key, response.posts.slice(0, 2)] as const;
-      })
-    );
+  const fetchHomePosts = useCallback(async () => {
+    const [hotEntries, recentResponse] = await Promise.all([
+      Promise.all(
+        MAIN_SECTIONS.map(async (section) => {
+          const response = await apiFetch<FeedResponse>(
+            `/feed${buildQuery({ board: 'main', type: section.key, query })}`
+          );
 
-    setSectionPosts(Object.fromEntries(entries) as Record<MainBoardKey, PostSummary[]>);
+          return [section.key, getPopularPosts(response.posts)] as const;
+        })
+      ),
+      apiFetch<FeedResponse>(`/feed${buildQuery({ board: 'main', query })}`),
+    ]);
+
+    setHotPosts(Object.fromEntries(hotEntries) as Record<MainBoardKey, PostSummary[]>);
+    setRecentPosts(recentResponse.posts.slice(0, RECENT_POST_COUNT));
   }, [query]);
 
   useEffect(() => {
     setLoading(true);
-    fetchRecentPosts()
+    fetchHomePosts()
       .catch(() => {
-        setSectionPosts(EMPTY_SECTION_POSTS);
+        setHotPosts(EMPTY_SECTION_POSTS);
+        setRecentPosts([]);
       })
       .finally(() => {
         setLoading(false);
       });
-  }, [fetchRecentPosts]);
+  }, [fetchHomePosts]);
 
   useFocusEffect(
     useCallback(() => {
-      fetchRecentPosts().catch(() => undefined);
-    }, [fetchRecentPosts])
+      fetchHomePosts().catch(() => undefined);
+    }, [fetchHomePosts])
   );
+
+  function handleHotScrollEnd(event: NativeSyntheticEvent<NativeScrollEvent>) {
+    if (!carouselWidth) {
+      return;
+    }
+
+    const nextIndex = Math.round(event.nativeEvent.contentOffset.x / carouselWidth);
+    setActiveHotIndex(Math.min(Math.max(nextIndex, 0), MAIN_SECTIONS.length - 1));
+  }
 
   return (
     <SafeAreaView edges={['top', 'left', 'right']} style={styles.safeArea}>
@@ -97,34 +128,94 @@ export default function MainBoardScreen() {
               <ActivityIndicator color={palette.burgundy} />
             </View>
           ) : (
-            MAIN_SECTIONS.map((section) => (
-              <View key={section.key} style={styles.section}>
+            <>
+              <View style={styles.hotSection}>
                 <View style={styles.sectionTitleRow}>
-                  <Text style={styles.sectionTitle}>{section.title}</Text>
                   <Pressable
-                    hitSlop={12}
-                    onPress={() => router.push(section.href)}
-                    style={({ pressed }) => [styles.sectionLink, pressed && styles.pressed]}>
+                    hitSlop={8}
+                    onPress={() => router.push(activeHotSection.href)}
+                    style={({ pressed }) => [styles.sectionTitlePressable, pressed && styles.pressed]}>
+                    <Text style={styles.sectionTitle} numberOfLines={1}>
+                      지금 고려대학교는 이런 {activeHotSection.hotLabel}이 핫해요!
+                    </Text>
                     <Text style={styles.sectionArrow}>&gt;</Text>
                   </Pressable>
                 </View>
 
-                <View style={styles.postGroup}>
-                  {sectionPosts[section.key].map((post, index) => (
+                <View style={styles.carouselWrap} onLayout={(event) => setCarouselWidth(event.nativeEvent.layout.width)}>
+                  <ScrollView
+                    horizontal
+                    pagingEnabled
+                    bounces={false}
+                    showsHorizontalScrollIndicator={false}
+                    scrollEventThrottle={16}
+                    onMomentumScrollEnd={handleHotScrollEnd}>
+                    {MAIN_SECTIONS.map((section) => {
+                      const posts = hotPosts[section.key];
+                      const pageWidth = carouselWidth || 1;
+
+                      return (
+                        <View key={section.key} style={[styles.carouselPage, { width: pageWidth }]}>
+                          <View style={styles.hotPostGroup}>
+                            {posts.map((post, index) => (
+                              <MainPostRow
+                                key={post.id}
+                                post={post}
+                                isLast={index === HOT_POST_COUNT - 1}
+                                variant="hot"
+                                onPress={() => router.push(`/post/${post.id}` as Href)}
+                              />
+                            ))}
+
+                            {Array.from({ length: Math.max(0, HOT_POST_COUNT - posts.length) }).map((_, index) => (
+                              <EmptyPostRow
+                                key={`empty-${section.key}-${index}`}
+                                isLast={posts.length + index === HOT_POST_COUNT - 1}
+                                variant="hot"
+                              />
+                            ))}
+                          </View>
+                        </View>
+                      );
+                    })}
+                  </ScrollView>
+                </View>
+
+                <View style={styles.pageDots}>
+                  {MAIN_SECTIONS.map((section, index) => (
+                    <View
+                      key={`dot-${section.key}`}
+                      style={[styles.pageDot, index === activeHotIndex && styles.pageDotActive]}
+                    />
+                  ))}
+                </View>
+              </View>
+
+              <View style={styles.latestSection}>
+                <View style={styles.sectionTitleRow}>
+                  <Text style={styles.sectionTitle}>종합게시판</Text>
+                </View>
+
+                <View style={styles.latestPostGroup}>
+                  {recentPosts.map((post, index) => (
                     <MainPostRow
                       key={post.id}
                       post={post}
-                      isLast={index === 1}
+                      isLast={index === RECENT_POST_COUNT - 1}
+                      showCategory
                       onPress={() => router.push(`/post/${post.id}` as Href)}
                     />
                   ))}
 
-                  {Array.from({ length: 2 - sectionPosts[section.key].length }).map((_, index) => (
-                    <EmptyPostRow key={`empty-${section.key}-${index}`} isLast={sectionPosts[section.key].length + index === 1} />
+                  {Array.from({ length: Math.max(0, RECENT_POST_COUNT - recentPosts.length) }).map((_, index) => (
+                    <EmptyPostRow
+                      key={`empty-recent-${index}`}
+                      isLast={recentPosts.length + index === RECENT_POST_COUNT - 1}
+                    />
                   ))}
                 </View>
               </View>
-            ))
+            </>
           )}
         </View>
       </View>
@@ -135,34 +226,52 @@ export default function MainBoardScreen() {
 function MainPostRow({
   post,
   isLast,
+  variant = 'latest',
+  showCategory = false,
   onPress,
 }: {
   post: PostSummary;
   isLast: boolean;
+  variant?: 'hot' | 'latest';
+  showCategory?: boolean;
   onPress: () => void;
 }) {
   const headline = getPostHeadline(post);
-  const meta = [post.location || post.subcategory, formatRelativeTime(post.createdAt)].filter(Boolean).join(' · ');
+  const meta = getPostMeta(post, showCategory);
+  const isHot = variant === 'hot';
+  const isLatest = !isHot;
 
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => [styles.postRow, isLast && styles.lastPostRow, pressed && styles.pressed]}>
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.postRow,
+        isHot && styles.hotPostRow,
+        isLatest && styles.latestPostRow,
+        isLast && styles.lastPostRow,
+        pressed && styles.pressed,
+      ]}>
       {post.coverImageUrl ? (
-        <Image source={{ uri: post.coverImageUrl }} style={styles.postImage} contentFit="cover" />
+        <Image
+          source={{ uri: post.coverImageUrl }}
+          style={[styles.postImage, isHot ? styles.hotPostImage : styles.latestPostImage]}
+          contentFit="cover"
+        />
       ) : (
-        <View style={styles.imagePlaceholder}>
+        <View style={[styles.imagePlaceholder, isHot ? styles.hotPostImage : styles.latestPostImage]}>
           <Text style={styles.imagePlaceholderText}>사진</Text>
         </View>
       )}
 
       <View style={styles.postBody}>
-        <Text style={styles.postTitle} numberOfLines={1}>
+        <Text style={[styles.postTitle, isHot ? styles.hotPostTitle : styles.latestPostTitle]} numberOfLines={1}>
           {post.title}
         </Text>
-        <Text style={styles.postMeta} numberOfLines={1}>
+        <Text style={[styles.postMeta, isLatest && styles.latestPostMeta]} numberOfLines={1}>
           {meta}
         </Text>
         <View style={styles.postBottomRow}>
-          <Text style={styles.postHeadline} numberOfLines={1}>
+          <Text style={[styles.postHeadline, isLatest && styles.latestPostHeadline]} numberOfLines={1}>
             {headline}
           </Text>
           <View style={styles.reactionRow}>
@@ -185,10 +294,13 @@ function MainPostRow({
   );
 }
 
-function EmptyPostRow({ isLast }: { isLast: boolean }) {
+function EmptyPostRow({ isLast, variant = 'latest' }: { isLast: boolean; variant?: 'hot' | 'latest' }) {
+  const isHot = variant === 'hot';
+  const isLatest = !isHot;
+
   return (
-    <View style={[styles.postRow, isLast && styles.lastPostRow]}>
-      <View style={styles.imagePlaceholder}>
+    <View style={[styles.postRow, isHot && styles.hotPostRow, isLatest && styles.latestPostRow, isLast && styles.lastPostRow]}>
+      <View style={[styles.imagePlaceholder, isHot ? styles.hotPostImage : styles.latestPostImage]}>
         <Text style={styles.imagePlaceholderText}>사진</Text>
       </View>
       <View style={styles.postBody}>
@@ -196,6 +308,46 @@ function EmptyPostRow({ isLast }: { isLast: boolean }) {
       </View>
     </View>
   );
+}
+
+function getPopularPosts(posts: PostSummary[]) {
+  return [...posts]
+    .sort((a, b) => {
+      const reactionGap = getReactionScore(b) - getReactionScore(a);
+
+      if (reactionGap !== 0) {
+        return reactionGap;
+      }
+
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    })
+    .slice(0, HOT_POST_COUNT);
+}
+
+function getReactionScore(post: PostSummary) {
+  return post.likeCount + post.commentCount;
+}
+
+function getPostMeta(post: PostSummary, showCategory: boolean) {
+  const category = showCategory ? getCategoryLabel(post.category) : null;
+
+  return [category, post.location || post.subcategory, formatRelativeTime(post.createdAt)].filter(Boolean).join(' · ');
+}
+
+function getCategoryLabel(category: PostCategory) {
+  if (category === 'market') {
+    return '중고';
+  }
+
+  if (category === 'recruit') {
+    return '구인';
+  }
+
+  if (category === 'promo') {
+    return '홍보';
+  }
+
+  return '커뮤니티';
 }
 
 function getPostHeadline(post: PostSummary) {
@@ -251,42 +403,61 @@ const styles = StyleSheet.create({
   boardArea: {
     flex: 1,
     paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.sm,
+    paddingBottom: spacing.md,
   },
   loadingWrap: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  section: {
+  hotSection: {
+    flexShrink: 0,
+    marginBottom: spacing.sm,
+  },
+  latestSection: {
     flex: 1,
     minHeight: 0,
   },
   sectionTitleRow: {
-    height: 34,
+    height: 30,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  sectionTitlePressable: {
+    flex: 1,
+    minWidth: 0,
     flexDirection: 'row',
     alignItems: 'center',
   },
   sectionTitle: {
+    flexShrink: 1,
     color: palette.ink,
-    fontSize: 19,
+    fontSize: 18,
     fontWeight: '500',
-    lineHeight: 26,
-  },
-  sectionLink: {
-    width: 34,
-    height: 30,
-    marginLeft: spacing.xs,
-    alignItems: 'center',
-    justifyContent: 'center',
+    lineHeight: 24,
   },
   sectionArrow: {
     color: palette.ink,
     fontSize: 22,
     fontWeight: '600',
-    lineHeight: 26,
+    marginLeft: spacing.xs,
+    lineHeight: 24,
   },
-  postGroup: {
+  carouselWrap: {
+    overflow: 'hidden',
+  },
+  carouselPage: {
+    paddingRight: 0,
+  },
+  hotPostGroup: {
+    height: 174,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: palette.border,
+    borderRadius: 8,
+    backgroundColor: palette.cream,
+  },
+  latestPostGroup: {
     flex: 1,
     minHeight: 0,
     overflow: 'hidden',
@@ -294,6 +465,24 @@ const styles = StyleSheet.create({
     borderColor: palette.border,
     borderRadius: 8,
     backgroundColor: palette.cream,
+  },
+  pageDots: {
+    height: 22,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 14,
+  },
+  pageDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    borderWidth: 1,
+    borderColor: palette.muted,
+  },
+  pageDotActive: {
+    backgroundColor: palette.ink,
+    borderColor: palette.ink,
   },
   postRow: {
     flex: 1,
@@ -304,6 +493,12 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xs,
     borderBottomWidth: 1,
     borderBottomColor: palette.border,
+  },
+  hotPostRow: {
+    paddingVertical: spacing.xs,
+  },
+  latestPostRow: {
+    paddingVertical: 5,
   },
   lastPostRow: {
     borderBottomWidth: 0,
@@ -316,6 +511,14 @@ const styles = StyleSheet.create({
     height: 74,
     borderRadius: 8,
     backgroundColor: palette.creamStrong,
+  },
+  hotPostImage: {
+    width: 70,
+    height: 70,
+  },
+  latestPostImage: {
+    width: 54,
+    height: 54,
   },
   imagePlaceholder: {
     width: 74,
@@ -336,7 +539,7 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
     marginLeft: spacing.md,
-    gap: 3,
+    gap: 2,
   },
   postTitle: {
     color: palette.ink,
@@ -344,11 +547,25 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     lineHeight: 20,
   },
+  hotPostTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    lineHeight: 20,
+  },
+  latestPostTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+    lineHeight: 17,
+  },
   postMeta: {
     color: palette.muted,
     fontSize: 14,
     fontWeight: '500',
     lineHeight: 17,
+  },
+  latestPostMeta: {
+    fontSize: 12,
+    lineHeight: 14,
   },
   postBottomRow: {
     flexDirection: 'row',
@@ -361,6 +578,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     lineHeight: 20,
+  },
+  latestPostHeadline: {
+    fontSize: 14,
+    lineHeight: 17,
   },
   reactionRow: {
     flexDirection: 'row',
