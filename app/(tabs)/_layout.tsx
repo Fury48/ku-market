@@ -15,6 +15,9 @@ export default function TabLayout() {
         tabBarActiveTintColor: palette.burgundy,
         tabBarInactiveTintColor: palette.muted,
         headerShown: false,
+        sceneStyle: {
+          backgroundColor: palette.cream,
+        },
         tabBarButton: HapticTab,
         tabBarStyle: {
           height: 100,

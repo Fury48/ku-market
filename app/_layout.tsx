@@ -1,4 +1,6 @@
+import { useEffect } from 'react';
 import { DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import * as SystemUI from 'expo-system-ui';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
@@ -8,6 +10,10 @@ import { NotificationsProvider } from '@/providers/notifications-provider';
 import { palette } from '@/lib/theme';
 
 export default function RootLayout() {
+  useEffect(() => {
+    SystemUI.setBackgroundColorAsync(palette.cream).catch(() => undefined);
+  }, []);
+
   return (
     <AuthProvider>
       <NotificationsProvider>
@@ -24,7 +30,11 @@ export default function RootLayout() {
               border: palette.border,
             },
           }}>
-          <Stack screenOptions={{ headerShown: false }}>
+          <Stack
+            screenOptions={{
+              headerShown: false,
+              contentStyle: { backgroundColor: palette.cream },
+            }}>
             <Stack.Screen name="index" />
             <Stack.Screen name="login" />
             <Stack.Screen name="register" />
