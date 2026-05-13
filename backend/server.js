@@ -23,6 +23,7 @@ const {
   getNotifications,
   getPostCoverImage,
   getPostDetail,
+  getPostImage,
   getSchemaMetadata,
   getUserBySessionToken,
   getUserProfileImage,
@@ -75,6 +76,29 @@ function compactPostImages(req, posts) {
       profileImageUrl: post.author.profileImageUrl ? `${baseUrl}/api/users/${post.author.id}/profile-image` : '',
     },
   }));
+}
+
+function compactPostDetail(req, post) {
+  const baseUrl = getRequestBaseUrl(req);
+
+  return {
+    ...post,
+    coverImageUrl: post.coverImageUrl ? `${baseUrl}/api/posts/${post.id}/cover-image` : '',
+    images: post.images.map((imageUrl, index) => (
+      imageUrl ? `${baseUrl}/api/posts/${post.id}/images/${index}` : ''
+    )),
+    author: {
+      ...post.author,
+      profileImageUrl: post.author.profileImageUrl ? `${baseUrl}/api/users/${post.author.id}/profile-image` : '',
+    },
+    comments: post.comments.map((comment) => ({
+      ...comment,
+      author: {
+        ...comment.author,
+        profileImageUrl: comment.author.profileImageUrl ? `${baseUrl}/api/users/${comment.author.id}/profile-image` : '',
+      },
+    })),
+  };
 }
 
 function decodeDataUrl(dataUrl) {
@@ -298,13 +322,19 @@ async function handleRequest(req, res) {
   if (req.method === 'POST' && pathname === '/api/posts') {
     const { user } = requireUser(req);
     const body = await readJson(req);
-    sendJson(req, res, 201, { post: createPost(user.id, body) });
+    sendJson(req, res, 201, { post: compactPostDetail(req, createPost(user.id, body)) });
     return;
   }
 
   const coverImageMatch = pathname.match(/^\/api\/posts\/(\d+)\/cover-image$/);
   if (coverImageMatch && req.method === 'GET') {
     sendImage(req, res, getPostCoverImage(Number(coverImageMatch[1])));
+    return;
+  }
+
+  const postImageMatch = pathname.match(/^\/api\/posts\/(\d+)\/images\/(\d+)$/);
+  if (postImageMatch && req.method === 'GET') {
+    sendImage(req, res, getPostImage(Number(postImageMatch[1]), Number(postImageMatch[2])));
     return;
   }
 
@@ -320,14 +350,17 @@ async function handleRequest(req, res) {
 
     if (req.method === 'GET') {
       const viewer = getUserBySessionToken(getSessionToken(req));
-      sendJson(req, res, 200, { post: getPostDetail(postId, viewer?.id ?? null) });
+      const post = getPostDetail(postId, viewer?.id ?? null);
+      sendJson(req, res, 200, {
+        post: url.searchParams.get('includeImageData') === '1' ? post : compactPostDetail(req, post),
+      });
       return;
     }
 
     if (req.method === 'PATCH') {
       const { user } = requireUser(req);
       const body = await readJson(req);
-      sendJson(req, res, 200, { post: updatePost(user.id, postId, body) });
+      sendJson(req, res, 200, { post: compactPostDetail(req, updatePost(user.id, postId, body)) });
       return;
     }
 
@@ -342,7 +375,7 @@ async function handleRequest(req, res) {
   const likeMatch = pathname.match(/^\/api\/posts\/(\d+)\/like$/);
   if (likeMatch && req.method === 'POST') {
     const { user } = requireUser(req);
-    sendJson(req, res, 200, { post: toggleLike(user.id, Number(likeMatch[1])) });
+    sendJson(req, res, 200, { post: compactPostDetail(req, toggleLike(user.id, Number(likeMatch[1]))) });
     return;
   }
 
@@ -350,7 +383,7 @@ async function handleRequest(req, res) {
   if (commentMatch && req.method === 'POST') {
     const { user } = requireUser(req);
     const body = await readJson(req);
-    sendJson(req, res, 201, { post: addComment(user.id, Number(commentMatch[1]), body.content) });
+    sendJson(req, res, 201, { post: compactPostDetail(req, addComment(user.id, Number(commentMatch[1]), body.content)) });
     return;
   }
 

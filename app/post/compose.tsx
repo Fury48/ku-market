@@ -38,7 +38,7 @@ export default function ComposePostScreen() {
     }
 
     setLoading(true);
-    apiFetch<{ post: PostDetail }>(`/posts/${postId}`)
+    apiFetch<{ post: PostDetail }>(`/posts/${postId}?includeImageData=1`)
       .then((response) => {
         setPost(response.post);
       })

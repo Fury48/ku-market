@@ -142,6 +142,10 @@ function getPostCoverImage(postId) {
   return getPostImages(postId)[0]?.image_url || '';
 }
 
+function getPostImage(postId, index) {
+  return getPostImages(postId)[Number(index) || 0]?.image_url || '';
+}
+
 function getPostLikeCount(postId) {
   ensureState();
   return state.post_likes.filter((like) => like.post_id === Number(postId)).length;
@@ -991,6 +995,7 @@ module.exports = {
   getFeed,
   getPostDetail,
   getPostCoverImage,
+  getPostImage,
   getLikedPosts,
   getMyPosts,
   getNotifications,
