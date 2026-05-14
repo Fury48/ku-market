@@ -156,7 +156,7 @@ export default function MainBoardScreen() {
                     onPress={() => router.push(activeHotSection.href)}
                     style={({ pressed }) => [styles.sectionTitlePressable, pressed && styles.pressed]}>
                     <Text style={styles.sectionTitle} numberOfLines={1}>
-                      지금 고려대학교는 이런 {activeHotSection.hotLabel}이 핫해요!
+                      지금 고려대학교는 이런 <Text style={styles.hotSectionLabel}>{activeHotSection.hotLabel}</Text>이 핫해요!
                     </Text>
                     <Text style={styles.sectionArrow}>&gt;</Text>
                   </Pressable>
@@ -455,6 +455,9 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '500',
     lineHeight: 24,
+  },
+  hotSectionLabel: {
+    color: palette.burgundy,
   },
   sectionArrow: {
     color: palette.ink,
