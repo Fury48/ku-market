@@ -35,6 +35,8 @@ export default function PostDetailScreen() {
   const params = useLocalSearchParams<{ id?: string | string[] }>();
   const postId = pickParam(params.id);
   const { width, height } = useWindowDimensions();
+  const appWidth = Platform.OS === 'web' ? Math.min(width, 480) : width;
+  const modalWidth = Platform.OS === 'web' ? Math.min(width, 480) : width;
   const [post, setPost] = useState<PostDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [comment, setComment] = useState('');
@@ -45,6 +47,7 @@ export default function PostDetailScreen() {
   const [deleting, setDeleting] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const keyboardOffset = useKeyboardOffset();
+  const isWebKeyboardOpen = Platform.OS === 'web' && keyboardOffset > 0;
 
   const loadPost = useCallback(async () => {
     if (!postId) {
@@ -170,7 +173,7 @@ export default function PostDetailScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === 'ios' ? 'padding' : Platform.OS === 'web' ? undefined : 'height'}
         keyboardVerticalOffset={0}
         style={styles.keyboardAvoider}>
       {loading ? (
@@ -186,14 +189,17 @@ export default function PostDetailScreen() {
           <ScrollView
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode="interactive"
-            contentContainerStyle={[styles.scrollContent, { paddingBottom: 120 + keyboardOffset }]}>
+            contentContainerStyle={[
+              styles.scrollContent,
+              { paddingBottom: (isWebKeyboardOpen ? 36 : 188) + keyboardOffset },
+            ]}>
             <View style={styles.hero}>
               <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false}>
-                {post.images.map((uri, index) => (
+                {(post.images.length ? post.images : post.coverImageUrl ? [post.coverImageUrl] : []).map((uri, index) => (
                   <Pressable
                     key={`${uri}-${index}`}
                     onPress={() => setSelectedImageIndex(index)}
-                    style={[styles.heroImageButton, { width }]}>
+                    style={[styles.heroImageButton, { width: appWidth }]}>
                     <Image source={{ uri }} style={styles.heroImage} contentFit="contain" />
                   </Pressable>
                 ))}
@@ -274,7 +280,8 @@ export default function PostDetailScreen() {
             </View>
           </ScrollView>
 
-          <View style={[styles.actionBar, { transform: [{ translateY: -keyboardOffset }] }]}>
+          {!isWebKeyboardOpen ? (
+          <View style={[styles.actionBar, Platform.OS !== 'web' && { transform: [{ translateY: -keyboardOffset }] }]}>
             <View style={styles.actionLeft}>
               <Pressable onPress={handleLike} style={styles.likeButton}>
                 <Ionicons name={post.isLiked ? 'heart' : 'heart-outline'} size={18} color={post.isLiked ? palette.burgundy : palette.ink} />
@@ -286,6 +293,7 @@ export default function PostDetailScreen() {
               <Text style={styles.chatButtonText}>채팅하기</Text>
             </Pressable>
           </View>
+          ) : null}
 
           <Modal
             visible={selectedImageIndex !== null}
@@ -295,7 +303,7 @@ export default function PostDetailScreen() {
             <View style={styles.imageModal}>
               <View style={styles.imageModalHeader}>
                 <Text style={styles.imageModalCounter}>
-                  {(selectedImageIndex ?? 0) + 1} / {post.images.length}
+                  {(selectedImageIndex ?? 0) + 1} / {post.images.length || (post.coverImageUrl ? 1 : 0)}
                 </Text>
                 <Pressable onPress={() => setSelectedImageIndex(null)} style={styles.imageModalCloseButton}>
                   <Ionicons name="close" size={24} color={palette.white} />
@@ -307,12 +315,12 @@ export default function PostDetailScreen() {
                 horizontal
                 pagingEnabled
                 showsHorizontalScrollIndicator={false}
-                contentOffset={{ x: (selectedImageIndex ?? 0) * width, y: 0 }}>
-                {post.images.map((uri, index) => (
-                  <View key={`modal-${uri}-${index}`} style={[styles.imageModalPage, { width }]}>
+                contentOffset={{ x: (selectedImageIndex ?? 0) * modalWidth, y: 0 }}>
+                {(post.images.length ? post.images : post.coverImageUrl ? [post.coverImageUrl] : []).map((uri, index) => (
+                  <View key={`modal-${uri}-${index}`} style={[styles.imageModalPage, { width: modalWidth }]}>
                     <Image
                       source={{ uri }}
-                      style={[styles.imageModalImage, { width, height: Math.max(1, height - 96) }]}
+                      style={[styles.imageModalImage, { width: modalWidth, height: Math.max(1, height - 96) }]}
                       contentFit="contain"
                     />
                   </View>
@@ -430,6 +438,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
   scrollContent: {
+    flexGrow: 1,
     paddingBottom: 120,
   },
   hero: {
@@ -634,12 +643,15 @@ const styles = StyleSheet.create({
   },
   dialogOverlay: {
     flex: 1,
+    alignItems: 'center',
     justifyContent: 'flex-end',
     backgroundColor: 'rgba(0,0,0,0.58)',
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.xl,
   },
   actionSheet: {
+    width: '100%',
+    maxWidth: 444,
     backgroundColor: palette.white,
     borderWidth: 1,
     borderColor: palette.border,
@@ -653,6 +665,8 @@ const styles = StyleSheet.create({
     elevation: 12,
   },
   confirmDialog: {
+    width: '100%',
+    maxWidth: 444,
     backgroundColor: palette.white,
     borderWidth: 1,
     borderColor: palette.border,
