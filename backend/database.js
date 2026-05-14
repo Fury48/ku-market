@@ -15,7 +15,7 @@ const pool = new Pool({
 });
 
 function createError(statusCode, message) {
-  return Object.assign(new Error(message), { statusCode });
+  return Object.assign(new Error(message), { statusCode }); 
 }
 
 function ensureDatabaseUrl() {

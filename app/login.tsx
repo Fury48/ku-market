@@ -1,17 +1,15 @@
 import { useState } from 'react';
-import { Alert, Pressable, StyleSheet, Switch, Text, Image ,TextInput, View } from 'react-native';
+import { Alert, Image, Pressable, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 import { Link, type Href, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { masterAccount } from '@/lib/constants';
 import { palette, radius, spacing } from '@/lib/theme';
 import { useAuth } from '@/providers/auth-provider';
-
 
 export default function LoginScreen() {
   const router = useRouter();
   const { login } = useAuth();
-  const [username, setUsername] = useState(masterAccount.username);
-  const [password, setPassword] = useState(masterAccount.password);
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [keepLoggedIn, setKeepLoggedIn] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
@@ -68,12 +66,6 @@ export default function LoginScreen() {
           <Text style={styles.primaryButtonText}>{submitting ? '로그인 중...' : '로그인'}</Text>
         </Pressable>
 
-        <View style={styles.masterCard}>
-          <Text style={styles.masterTitle}>마스터 계정</Text>
-          <Text style={styles.masterText}>아이디: {masterAccount.username}</Text>
-          <Text style={styles.masterText}>비밀번호: {masterAccount.password}</Text>
-        </View>
-
         <Link href={'/register' as Href} style={styles.link}>
           고려대 이메일로 새 계정 만들기
         </Link>
@@ -90,10 +82,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: spacing.xl,
   },
-   logo: {
-    width: 100,  // 이미지 너비 조정
-    height: 100,  // 이미지 높이 조정
-    marginBottom: 0,  //미지와 텍스트 간격 조정
+  logo: {
+    width: 100,
+    height: 100,
+    marginBottom: 0,
   },
   hero: {
     alignItems: 'center',
@@ -152,23 +144,6 @@ const styles = StyleSheet.create({
     color: palette.white,
     fontSize: 15,
     fontWeight: '800',
-  },
-  masterCard: {
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: '#4B453D',
-    backgroundColor: '#27251F',
-    padding: spacing.lg,
-    gap: 4,
-  },
-  masterTitle: {
-    color: palette.ink,
-    fontSize: 13,
-    fontWeight: '800',
-  },
-  masterText: {
-    color: palette.muted,
-    fontSize: 13,
   },
   link: {
     color: palette.burgundy,
