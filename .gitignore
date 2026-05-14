@@ -1,6 +1,11 @@
 node_modules
 .npm-cache
 .corepack
+.expo
+.logs
+.verify-backend
+.verify-backend-v2
+backend/data.json
 .env
 .env.*
 !.env.example

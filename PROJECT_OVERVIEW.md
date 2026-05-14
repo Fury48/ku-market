@@ -74,9 +74,8 @@
 
 스키마 정의 파일:
 
-- [backend/schema.js](/c:/vscode/ku-market/backend/schema.js:1)
-- [backend/schema.sql](/c:/vscode/ku-market/backend/schema.sql:1)
-- [backend/database.js](/c:/vscode/ku-market/backend/database.js:1)
+- [backend/schema.sql](/c:/Users/gamin/Desktop/PythoWorkspace/ku-market/backend/schema.sql:1)
+- [backend/database.js](/c:/Users/gamin/Desktop/PythoWorkspace/ku-market/backend/database.js:1)
 
 ## Master Account
 
@@ -84,17 +83,9 @@
 - Password: `Horang2026!`
 - Email: `master@korea.ac.kr`
 
-## Demo Data
-
-- 13개 시드 게시글
-- 중고거래, 모집글, 홍보글, 자유글 포함
-- 초기 채팅방 2개 포함
-- 상대 유저 인사 메시지 포함
-
 ## Entry Points
 
-- Frontend root: [app/_layout.tsx](/c:/vscode/ku-market/app/_layout.tsx:1)
-- Tabs: [app/(tabs)/_layout.tsx](/c:/vscode/ku-market/app/(tabs)/_layout.tsx:1)
-- Backend server: [backend/server.js](/c:/vscode/ku-market/backend/server.js:1)
-- Database layer: [backend/database.js](/c:/vscode/ku-market/backend/database.js:1)
-- Seed data: [backend/seed-data.js](/c:/vscode/ku-market/backend/seed-data.js:1)
+- Frontend root: [app/_layout.tsx](/c:/Users/gamin/Desktop/PythoWorkspace/ku-market/app/_layout.tsx:1)
+- Tabs: [app/(tabs)/_layout.tsx](/c:/Users/gamin/Desktop/PythoWorkspace/ku-market/app/(tabs)/_layout.tsx:1)
+- Backend server: [backend/server.js](/c:/Users/gamin/Desktop/PythoWorkspace/ku-market/backend/server.js:1)
+- Database layer: [backend/database.js](/c:/Users/gamin/Desktop/PythoWorkspace/ku-market/backend/database.js:1)

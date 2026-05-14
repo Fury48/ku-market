@@ -5,7 +5,6 @@
   "scripts": {
     "start": "expo start",
     "server": "node ./backend/server.js",
-    "db:migrate-json": "node ./backend/migrate-json-to-supabase.js",
     "reset-project": "node ./scripts/reset-project.js",
     "android": "expo start --android",
     "ios": "expo start --ios",

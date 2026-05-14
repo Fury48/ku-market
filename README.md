@@ -38,14 +38,8 @@ ku-market/
 │  └─ register.tsx
 ├─ backend/
 │  ├─ database.js
-│  ├─ db.js
 │  ├─ http.js
-│  ├─ index.js
-│  ├─ placeholders.js
-│  ├─ schema.js
 │  ├─ schema.sql
-│  ├─ seed-data.js
-│  ├─ seed.js
 │  └─ server.js
 ├─ components/
 │  ├─ ui/
@@ -89,22 +83,13 @@ ku-market/
 - 순수 `Node.js` HTTP 서버
 - Supabase PostgreSQL 연결을 위한 `pg` 기반 DB 접근층
 - `backend/schema.sql` 로 Postgres 테이블 구조 명시
-- 기존 `backend/data.json` 을 Supabase로 옮기는 마이그레이션 스크립트 포함
 - 인증, 피드, 게시글, 댓글, 찜, 채팅, 프로필 수정 API 제공
-- 10개 이상의 더미 게시글과 초기 채팅 데이터 포함
 
 ## Supabase Setup
 
 1. Supabase 프로젝트를 만들고 SQL Editor에서 `backend/schema.sql` 전체를 실행합니다.
 2. Project Settings > Database에서 Postgres connection string을 복사합니다.
 3. `.env.example`을 참고해서 `DATABASE_URL`을 설정합니다.
-4. 기존 `backend/data.json` 데이터를 넣으려면 아래 명령을 실행합니다.
-
-```bash
-npm run db:migrate-json -- --reset
-```
-
-`--reset`은 Supabase 테이블 데이터를 비우고 `data.json` 기준으로 다시 채웁니다. 이미 운영 데이터가 있으면 빼고 실행하세요.
 
 ## Run
 

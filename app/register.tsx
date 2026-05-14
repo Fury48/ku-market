@@ -22,19 +22,37 @@ export default function RegisterScreen() {
   const [department, setDepartment] = useState('정보보호대학');
   const [studentYear, setStudentYear] = useState('2');
   const [profileImageUrl, setProfileImageUrl] = useState('');
+  const [sendingCode, setSendingCode] = useState(false);
+  const [codeSent, setCodeSent] = useState(false);
+  const [verifyingCode, setVerifyingCode] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const keyboardOffset = useKeyboardOffset();
 
   const emailValid = useMemo(() => /@korea\.ac\.kr$/i.test(email.trim()), [email]);
+  const sendCodeDisabled = sendingCode || submitting;
+  const verifyCodeDisabled = verifyingCode || sendingCode || submitting || !code.trim();
+
+  function handleEmailChange(value: string) {
+    setEmail(value);
+    setVerified(false);
+    setCodeSent(false);
+    setCode('');
+  }
 
   async function handleSendCode() {
+    if (sendCodeDisabled) {
+      return;
+    }
+
     if (!emailValid) {
       Alert.alert('이메일 형식 확인', '@korea.ac.kr 이메일만 사용할 수 있어요.');
       return;
     }
 
     try {
-      const emailCheck = await apiFetch<{ taken: boolean }>(`/auth/check/email?email=${encodeURIComponent(email)}`);
+      setSendingCode(true);
+      const normalizedEmail = email.trim().toLowerCase();
+      const emailCheck = await apiFetch<{ taken: boolean }>(`/auth/check/email?email=${encodeURIComponent(normalizedEmail)}`);
       if (emailCheck.taken) {
         Alert.alert('중복 이메일', '이미 가입된 학교 이메일입니다.');
         return;
@@ -42,26 +60,37 @@ export default function RegisterScreen() {
 
       await apiFetch<{ ok: boolean }>('/auth/send-code', {
         method: 'POST',
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email: normalizedEmail }),
       });
+      setEmail(normalizedEmail);
       setVerified(false);
+      setCodeSent(true);
       setCode('');
       Alert.alert('인증번호 발송', '고려대학교 이메일로 인증번호를 보냈습니다. 메일함을 확인해 주세요.');
     } catch (error) {
       Alert.alert('인증번호 발송 실패', error instanceof Error ? error.message : '다시 시도해 주세요.');
+    } finally {
+      setSendingCode(false);
     }
   }
 
   async function handleVerifyCode() {
+    if (verifyCodeDisabled) {
+      return;
+    }
+
     try {
+      setVerifyingCode(true);
       await apiFetch('/auth/verify-code', {
         method: 'POST',
-        body: JSON.stringify({ email, code }),
+        body: JSON.stringify({ email: email.trim().toLowerCase(), code }),
       });
       setVerified(true);
       Alert.alert('인증 완료', '이메일 인증이 완료되었습니다.');
     } catch (error) {
       Alert.alert('인증 실패', error instanceof Error ? error.message : '다시 시도해 주세요.');
+    } finally {
+      setVerifyingCode(false);
     }
   }
 
@@ -149,17 +178,36 @@ export default function RegisterScreen() {
         <Field
           label="학교 이메일"
           value={email}
-          onChangeText={setEmail}
+          onChangeText={handleEmailChange}
           placeholder="20261234@korea.ac.kr"
           keyboardType="email-address"
+          editable={!sendingCode && !submitting}
         />
-        <Pressable onPress={handleSendCode} style={styles.secondaryButton}>
-          <Text style={styles.secondaryButtonText}>인증번호 보내기</Text>
+        <Pressable
+          disabled={sendCodeDisabled}
+          onPress={handleSendCode}
+          style={[styles.secondaryButton, sendCodeDisabled && styles.buttonDisabled]}>
+          <Text style={[styles.secondaryButtonText, sendCodeDisabled && styles.buttonTextDisabled]}>
+            {sendingCode ? '인증번호 보내는 중...' : codeSent ? '인증번호 다시 보내기' : '인증번호 보내기'}
+          </Text>
         </Pressable>
+        {codeSent ? <Text style={styles.helperText}>메일이 오지 않았다면 같은 버튼으로 다시 보낼 수 있어요.</Text> : null}
 
-        <Field label="인증번호" value={code} onChangeText={setCode} placeholder="4자리 숫자" keyboardType="numeric" />
-        <Pressable onPress={handleVerifyCode} style={styles.secondaryButton}>
-          <Text style={styles.secondaryButtonText}>인증 확인</Text>
+        <Field
+          label="인증번호"
+          value={code}
+          onChangeText={setCode}
+          placeholder="4자리 숫자"
+          keyboardType="numeric"
+          editable={codeSent && !verified && !verifyingCode}
+        />
+        <Pressable
+          disabled={verifyCodeDisabled || verified}
+          onPress={handleVerifyCode}
+          style={[styles.secondaryButton, (verifyCodeDisabled || verified) && styles.buttonDisabled]}>
+          <Text style={[styles.secondaryButtonText, (verifyCodeDisabled || verified) && styles.buttonTextDisabled]}>
+            {verified ? '인증 완료' : verifyingCode ? '확인 중...' : '인증 확인'}
+          </Text>
         </Pressable>
 
         <Field label="아이디" value={username} onChangeText={setUsername} placeholder="아이디" editable={verified} />
@@ -300,6 +348,18 @@ const styles = StyleSheet.create({
     color: palette.ink,
     fontSize: 14,
     fontWeight: '700',
+  },
+  buttonDisabled: {
+    backgroundColor: '#F0F1F3',
+    borderColor: '#D8DBE0',
+  },
+  buttonTextDisabled: {
+    color: palette.muted,
+  },
+  helperText: {
+    color: palette.muted,
+    fontSize: 12,
+    lineHeight: 18,
   },
   imagePicker: {
     borderWidth: 1,
