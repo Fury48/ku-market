@@ -52,13 +52,16 @@ export default function MainBoardScreen() {
   const [carouselWidth, setCarouselWidth] = useState(0);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState('');
+  const [searchOpen, setSearchOpen] = useState(false);
   const [headerHeight, setHeaderHeight] = useState(0);
   const hasLoadedRef = useRef(false);
+  const hotPostsLoadedRef = useRef(false);
 
   const activeHotSection = MAIN_SECTIONS[activeHotIndex] ?? MAIN_SECTIONS[0];
+  const isSearchMode = searchOpen || Boolean(query.trim());
 
-  const fetchHomePosts = useCallback(async () => {
-    const response = await apiFetch<FeedResponse>(`/feed${buildQuery({ board: 'main', query })}`);
+  const fetchHotPosts = useCallback(async () => {
+    const response = await apiFetch<FeedResponse>(`/feed${buildQuery({ board: 'main' })}`);
     const posts = response.posts;
     const hotEntries = MAIN_SECTIONS.map((section) => {
       const sectionPosts = posts.filter((post) => post.category === section.key);
@@ -66,10 +69,13 @@ export default function MainBoardScreen() {
       return [section.key, getPopularPosts(sectionPosts)] as const;
     });
 
-    return {
-      hotPosts: Object.fromEntries(hotEntries) as Record<MainBoardKey, PostSummary[]>,
-      recentPosts: posts.slice(0, RECENT_POST_COUNT),
-    };
+    return Object.fromEntries(hotEntries) as Record<MainBoardKey, PostSummary[]>;
+  }, []);
+
+  const fetchRecentPosts = useCallback(async () => {
+    const response = await apiFetch<FeedResponse>(`/feed${buildQuery({ board: 'main', query })}`);
+
+    return response.posts.slice(0, RECENT_POST_COUNT);
   }, [query]);
 
   useFocusEffect(
@@ -80,23 +86,42 @@ export default function MainBoardScreen() {
         setLoading(true);
       }
 
-      fetchHomePosts()
-        .then((nextState) => {
+      const hotPostsRequest = hotPostsLoadedRef.current
+        ? Promise.resolve()
+        : fetchHotPosts()
+            .then((nextHotPosts) => {
+              if (!isActive) {
+                return;
+              }
+
+              hotPostsLoadedRef.current = true;
+              setHotPosts(nextHotPosts);
+            })
+            .catch(() => {
+              if (!isActive) {
+                return;
+              }
+
+              setHotPosts(EMPTY_SECTION_POSTS);
+            });
+
+      const recentPostsRequest = fetchRecentPosts()
+        .then((nextRecentPosts) => {
           if (!isActive) {
             return;
           }
 
-          setHotPosts(nextState.hotPosts);
-          setRecentPosts(nextState.recentPosts);
+          setRecentPosts(nextRecentPosts);
         })
         .catch(() => {
           if (!isActive) {
             return;
           }
 
-          setHotPosts(EMPTY_SECTION_POSTS);
           setRecentPosts([]);
-        })
+        });
+
+      Promise.allSettled([hotPostsRequest, recentPostsRequest])
         .finally(() => {
           if (!isActive) {
             return;
@@ -109,7 +134,7 @@ export default function MainBoardScreen() {
       return () => {
         isActive = false;
       };
-    }, [fetchHomePosts])
+    }, [fetchHotPosts, fetchRecentPosts])
   );
 
   function handleHotScrollEnd(event: NativeSyntheticEvent<NativeScrollEvent>) {
@@ -139,6 +164,7 @@ export default function MainBoardScreen() {
             secondaryValue="all"
             onSecondaryChange={() => undefined}
             rightAccessory={<NotificationBell />}
+            onSearchOpenChange={setSearchOpen}
           />
         </View>
 
@@ -149,67 +175,69 @@ export default function MainBoardScreen() {
             </View>
           ) : (
             <>
-              <View style={styles.hotSection}>
-                <View style={styles.sectionTitleRow}>
-                  <Pressable
-                    hitSlop={8}
-                    onPress={() => router.push(activeHotSection.href)}
-                    style={({ pressed }) => [styles.sectionTitlePressable, pressed && styles.pressed]}>
-                    <Text style={styles.sectionTitle} numberOfLines={1}>
-                      지금 고려대학교는 이런 <Text style={styles.hotSectionLabel}>{activeHotSection.hotLabel}</Text>이 핫해요!
-                    </Text>
-                    <Text style={styles.sectionArrow}>&gt;</Text>
-                  </Pressable>
-                </View>
+              {!isSearchMode ? (
+                <View style={styles.hotSection}>
+                  <View style={styles.sectionTitleRow}>
+                    <Pressable
+                      hitSlop={8}
+                      onPress={() => router.push(activeHotSection.href)}
+                      style={({ pressed }) => [styles.sectionTitlePressable, pressed && styles.pressed]}>
+                      <Text style={styles.sectionTitle} numberOfLines={1}>
+                        지금 고려대학교는 이런 <Text style={styles.hotSectionLabel}>{activeHotSection.hotLabel}</Text>이 핫해요!
+                      </Text>
+                      <Text style={styles.sectionArrow}>&gt;</Text>
+                    </Pressable>
+                  </View>
 
-                <View style={styles.carouselWrap} onLayout={(event) => setCarouselWidth(event.nativeEvent.layout.width)}>
-                  <ScrollView
-                    horizontal
-                    pagingEnabled
-                    bounces={false}
-                    showsHorizontalScrollIndicator={false}
-                    scrollEventThrottle={16}
-                    onMomentumScrollEnd={handleHotScrollEnd}>
-                    {MAIN_SECTIONS.map((section) => {
-                      const posts = hotPosts[section.key];
-                      const pageWidth = carouselWidth || 1;
+                  <View style={styles.carouselWrap} onLayout={(event) => setCarouselWidth(event.nativeEvent.layout.width)}>
+                    <ScrollView
+                      horizontal
+                      pagingEnabled
+                      bounces={false}
+                      showsHorizontalScrollIndicator={false}
+                      scrollEventThrottle={16}
+                      onMomentumScrollEnd={handleHotScrollEnd}>
+                      {MAIN_SECTIONS.map((section) => {
+                        const posts = hotPosts[section.key];
+                        const pageWidth = carouselWidth || 1;
 
-                      return (
-                        <View key={section.key} style={[styles.carouselPage, { width: pageWidth }]}>
-                          <View style={styles.hotPostGroup}>
-                            {posts.map((post, index) => (
-                              <MainPostRow
-                                key={post.id}
-                                post={post}
-                                isLast={index === HOT_POST_COUNT - 1}
-                                variant="hot"
-                                onPress={() => router.push(`/post/${post.id}` as Href)}
-                              />
-                            ))}
+                        return (
+                          <View key={section.key} style={[styles.carouselPage, { width: pageWidth }]}>
+                            <View style={styles.hotPostGroup}>
+                              {posts.map((post, index) => (
+                                <MainPostRow
+                                  key={post.id}
+                                  post={post}
+                                  isLast={index === HOT_POST_COUNT - 1}
+                                  variant="hot"
+                                  onPress={() => router.push(`/post/${post.id}` as Href)}
+                                />
+                              ))}
 
-                            {Array.from({ length: Math.max(0, HOT_POST_COUNT - posts.length) }).map((_, index) => (
-                              <EmptyPostRow
-                                key={`empty-${section.key}-${index}`}
-                                isLast={posts.length + index === HOT_POST_COUNT - 1}
-                                variant="hot"
-                              />
-                            ))}
+                              {Array.from({ length: Math.max(0, HOT_POST_COUNT - posts.length) }).map((_, index) => (
+                                <EmptyPostRow
+                                  key={`empty-${section.key}-${index}`}
+                                  isLast={posts.length + index === HOT_POST_COUNT - 1}
+                                  variant="hot"
+                                />
+                              ))}
+                            </View>
                           </View>
-                        </View>
-                      );
-                    })}
-                  </ScrollView>
-                </View>
+                        );
+                      })}
+                    </ScrollView>
+                  </View>
 
-                <View style={styles.pageDots}>
-                  {MAIN_SECTIONS.map((section, index) => (
-                    <View
-                      key={`dot-${section.key}`}
-                      style={[styles.pageDot, index === activeHotIndex && styles.pageDotActive]}
-                    />
-                  ))}
+                  <View style={styles.pageDots}>
+                    {MAIN_SECTIONS.map((section, index) => (
+                      <View
+                        key={`dot-${section.key}`}
+                        style={[styles.pageDot, index === activeHotIndex && styles.pageDotActive]}
+                      />
+                    ))}
+                  </View>
                 </View>
-              </View>
+              ) : null}
 
               <View style={styles.latestSection}>
                 <View style={styles.sectionTitleRow}>

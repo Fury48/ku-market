@@ -17,6 +17,7 @@ type SearchHeaderProps = {
   secondaryValue: string;
   onSecondaryChange: (value: string) => void;
   rightAccessory?: ReactNode;
+  onSearchOpenChange?: (open: boolean) => void;
 };
 
 export function SearchHeader({
@@ -32,6 +33,7 @@ export function SearchHeader({
   secondaryValue,
   onSecondaryChange,
   rightAccessory,
+  onSearchOpenChange,
 }: SearchHeaderProps) {
   const inputRef = useRef<TextInput>(null);
   const [searchOpen, setSearchOpen] = useState(Boolean(query));
@@ -46,6 +48,7 @@ export function SearchHeader({
   function closeSearch() {
     onChangeQuery('');
     setSearchOpen(false);
+    onSearchOpenChange?.(false);
   }
 
   return (
@@ -62,7 +65,13 @@ export function SearchHeader({
         <View style={styles.actions}>
           <Pressable
             accessibilityLabel="검색"
-            onPress={() => setSearchOpen((value) => !value)}
+            onPress={() =>
+              setSearchOpen((value) => {
+                const nextValue = !value;
+                onSearchOpenChange?.(nextValue);
+                return nextValue;
+              })
+            }
             style={[styles.iconButton, (searchOpen || query) && styles.iconButtonActive]}>
             <Ionicons name="search" size={22} color={searchOpen || query ? palette.white : palette.ink} />
           </Pressable>
