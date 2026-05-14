@@ -8,8 +8,11 @@ import { AuthProvider } from '@/providers/auth-provider';
 import { ChatRoomsProvider } from '@/providers/chat-rooms-provider';
 import { NotificationsProvider } from '@/providers/notifications-provider';
 import { palette } from '@/lib/theme';
+import { installWebAlert } from '@/lib/web-alert';
 
 export default function RootLayout() {
+  installWebAlert();
+
   useEffect(() => {
     SystemUI.setBackgroundColorAsync(palette.cream).catch(() => undefined);
   }, []);
