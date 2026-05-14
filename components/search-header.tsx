@@ -1,5 +1,5 @@
 import { ReactNode, useEffect, useRef, useState } from 'react';
-import { Image, ImageSourcePropType, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Image, ImageSourcePropType, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { palette, radius, spacing } from '@/lib/theme';
 import { Pill } from '@/components/ui/pill';
@@ -89,7 +89,7 @@ export function SearchHeader({
             placeholder="제목이나 본문으로 검색"
             placeholderTextColor={palette.muted}
             returnKeyType="search"
-            style={styles.searchInput}
+            style={[styles.searchInput, Platform.OS === 'web' && styles.webInput]}
           />
           <Pressable accessibilityLabel="검색 닫기" hitSlop={10} onPress={closeSearch} style={styles.closeButton}>
             <Ionicons name="close" size={18} color={palette.muted} />
@@ -196,6 +196,9 @@ const styles = StyleSheet.create({
     color: palette.ink,
     fontSize: 14,
     paddingVertical: 0,
+  },
+  webInput: {
+    outlineStyle: 'none',
   },
   closeButton: {
     width: 28,

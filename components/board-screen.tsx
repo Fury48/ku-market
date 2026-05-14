@@ -15,6 +15,7 @@ import { FloatingWriteButton } from '@/components/ui/floating-write-button';
 import { PostCard } from '@/components/post-card';
 import { SearchHeader } from '@/components/search-header';
 import { NotificationBell } from '@/components/notification-bell';
+import { useKeyboardOffset } from '@/hooks/use-keyboard-offset';
 
 type BoardScreenProps = {
   board: BoardType;
@@ -34,10 +35,13 @@ export function BoardScreen({ board }: BoardScreenProps) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [query, setQuery] = useState('');
+  const [searchOpen, setSearchOpen] = useState(false);
   const [primary, setPrimary] = useState<'all' | PostCategory>(board === 'main' ? 'all' : board);
   const [secondary, setSecondary] = useState('all');
   const [headerHeight, setHeaderHeight] = useState(0);
   const hasLoadedRef = useRef(false);
+  const keyboardOffset = useKeyboardOffset();
+  const isSearchMode = searchOpen || Boolean(query.trim()) || keyboardOffset > 0;
 
   const secondaryChips = useMemo(() => {
     if (board === 'main') {
@@ -137,6 +141,7 @@ export function BoardScreen({ board }: BoardScreenProps) {
             secondaryValue={secondary}
             onSecondaryChange={setSecondary}
             rightAccessory={<NotificationBell />}
+            onSearchOpenChange={setSearchOpen}
           />
         </View>
 
@@ -167,7 +172,7 @@ export function BoardScreen({ board }: BoardScreenProps) {
           )}
         </ScrollView>
 
-        <FloatingWriteButton onPress={() => router.push(`/post/compose?board=${board}` as Href)} />
+        <FloatingWriteButton hidden={isSearchMode} onPress={() => router.push(`/post/compose?board=${board}` as Href)} />
       </View>
     </SafeAreaView>
   );

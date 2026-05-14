@@ -20,6 +20,7 @@ import { palette, spacing } from '@/lib/theme';
 import { FeedResponse, PostCategory, PostSummary } from '@/types/models';
 import { SearchHeader } from '@/components/search-header';
 import { NotificationBell } from '@/components/notification-bell';
+import { useKeyboardOffset } from '@/hooks/use-keyboard-offset';
 
 type MainBoardKey = Extract<PostCategory, 'market' | 'recruit' | 'promo'>;
 
@@ -56,6 +57,7 @@ export default function MainBoardScreen() {
   const [headerHeight, setHeaderHeight] = useState(0);
   const hasLoadedRef = useRef(false);
   const hotPostsLoadedRef = useRef(false);
+  const keyboardOffset = useKeyboardOffset();
 
   const activeHotSection = MAIN_SECTIONS[activeHotIndex] ?? MAIN_SECTIONS[0];
   const isSearchMode = searchOpen || Boolean(query.trim());
@@ -137,13 +139,19 @@ export default function MainBoardScreen() {
     }, [fetchHotPosts, fetchRecentPosts])
   );
 
-  function handleHotScrollEnd(event: NativeSyntheticEvent<NativeScrollEvent>) {
-    if (!carouselWidth) {
+  function syncActiveHotIndex(event: NativeSyntheticEvent<NativeScrollEvent>) {
+    const pageWidth = carouselWidth || event.nativeEvent.layoutMeasurement.width;
+
+    if (!pageWidth) {
       return;
     }
 
-    const nextIndex = Math.round(event.nativeEvent.contentOffset.x / carouselWidth);
-    setActiveHotIndex(Math.min(Math.max(nextIndex, 0), MAIN_SECTIONS.length - 1));
+    const nextIndex = Math.min(
+      Math.max(Math.round(event.nativeEvent.contentOffset.x / pageWidth), 0),
+      MAIN_SECTIONS.length - 1
+    );
+
+    setActiveHotIndex((currentIndex) => (currentIndex === nextIndex ? currentIndex : nextIndex));
   }
 
   return (
@@ -174,7 +182,11 @@ export default function MainBoardScreen() {
               <ActivityIndicator color={palette.burgundy} />
             </View>
           ) : (
-            <>
+            <ScrollView
+              style={styles.mainScroll}
+              contentContainerStyle={[styles.mainScrollContent, { paddingBottom: spacing.lg + keyboardOffset }]}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="interactive">
               {!isSearchMode ? (
                 <View style={styles.hotSection}>
                   <View style={styles.sectionTitleRow}>
@@ -196,7 +208,9 @@ export default function MainBoardScreen() {
                       bounces={false}
                       showsHorizontalScrollIndicator={false}
                       scrollEventThrottle={16}
-                      onMomentumScrollEnd={handleHotScrollEnd}>
+                      onScroll={syncActiveHotIndex}
+                      onScrollEndDrag={syncActiveHotIndex}
+                      onMomentumScrollEnd={syncActiveHotIndex}>
                       {MAIN_SECTIONS.map((section) => {
                         const posts = hotPosts[section.key];
                         const pageWidth = carouselWidth || 1;
@@ -263,7 +277,7 @@ export default function MainBoardScreen() {
                   ))}
                 </View>
               </View>
-            </>
+            </ScrollView>
           )}
         </View>
       </View>
@@ -453,6 +467,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.md,
   },
+  mainScroll: {
+    flex: 1,
+  },
+  mainScrollContent: {
+    paddingBottom: spacing.lg,
+  },
   loadingWrap: {
     flex: 1,
     alignItems: 'center',
@@ -463,8 +483,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   latestSection: {
-    flex: 1,
-    minHeight: 0,
+    flexShrink: 0,
   },
   sectionTitleRow: {
     height: 30,
@@ -509,8 +528,6 @@ const styles = StyleSheet.create({
     backgroundColor: palette.cream,
   },
   latestPostGroup: {
-    flex: 1,
-    minHeight: 0,
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: palette.border,
@@ -536,8 +553,6 @@ const styles = StyleSheet.create({
     borderColor: palette.ink,
   },
   postRow: {
-    flex: 1,
-    minHeight: 0,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: spacing.md,
@@ -546,9 +561,11 @@ const styles = StyleSheet.create({
     borderBottomColor: palette.border,
   },
   hotPostRow: {
+    height: 87,
     paddingVertical: spacing.xs,
   },
   latestPostRow: {
+    minHeight: 68,
     paddingVertical: 5,
   },
   lastPostRow: {

@@ -40,6 +40,10 @@ export default function PostDetailScreen() {
   const [comment, setComment] = useState('');
   const [commenting, setCommenting] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
+  const [actionsVisible, setActionsVisible] = useState(false);
+  const [deleteConfirmVisible, setDeleteConfirmVisible] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
   const keyboardOffset = useKeyboardOffset();
 
   const loadPost = useCallback(async () => {
@@ -127,18 +131,8 @@ export default function PostDetailScreen() {
     }
 
     if (post.isMine) {
-      Alert.alert('게시글 관리', '원하는 작업을 선택해 주세요.', [
-        {
-          text: '수정',
-          onPress: () => router.push(`/post/compose?id=${post.id}` as Href),
-        },
-        {
-          text: '삭제',
-          style: 'destructive',
-          onPress: handleDelete,
-        },
-        { text: '취소', style: 'cancel' },
-      ]);
+      setActionError(null);
+      setActionsVisible(true);
       return;
     }
 
@@ -152,30 +146,25 @@ export default function PostDetailScreen() {
     ]);
   }
 
-  function handleDelete() {
+  async function handleDelete() {
     if (!postId) {
       return;
     }
 
-    Alert.alert('게시글 삭제', '정말 삭제하시겠습니까?', [
-      { text: '취소', style: 'cancel' },
-      {
-        text: '삭제',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await apiFetch(`/posts/${postId}`, {
-              method: 'DELETE',
-              body: JSON.stringify({}),
-            });
-            Alert.alert('삭제 완료', '게시글이 삭제되었습니다.');
-            router.replace('/(tabs)' as Href);
-          } catch (error) {
-            Alert.alert('삭제 실패', error instanceof Error ? error.message : '다시 시도해 주세요.');
-          }
-        },
-      },
-    ]);
+    try {
+      setDeleting(true);
+      setActionError(null);
+      await apiFetch(`/posts/${postId}`, {
+        method: 'DELETE',
+        body: JSON.stringify({}),
+      });
+      setDeleteConfirmVisible(false);
+      router.replace('/(tabs)' as Href);
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : '다시 시도해 주세요.');
+    } finally {
+      setDeleting(false);
+    }
   }
 
   return (
@@ -329,6 +318,91 @@ export default function PostDetailScreen() {
                   </View>
                 ))}
               </ScrollView>
+            </View>
+          </Modal>
+
+          <Modal
+            visible={actionsVisible}
+            transparent
+            animationType="fade"
+            onRequestClose={() => setActionsVisible(false)}>
+            <View style={styles.dialogOverlay}>
+              <Pressable style={StyleSheet.absoluteFill} onPress={() => setActionsVisible(false)} />
+              <View style={styles.actionSheet}>
+                <Text style={styles.dialogTitle}>게시글 관리</Text>
+                <Text style={styles.dialogText}>원하는 작업을 선택해 주세요.</Text>
+                {actionError ? <Text style={styles.dialogError}>{actionError}</Text> : null}
+
+                <Pressable
+                  onPress={() => {
+                    setActionsVisible(false);
+                    router.push(`/post/compose?id=${post.id}` as Href);
+                  }}
+                  style={({ pressed }) => [styles.sheetAction, pressed && styles.pressedAction]}>
+                  <Ionicons name="create-outline" size={20} color={palette.ink} />
+                  <Text style={styles.sheetActionText}>수정하기</Text>
+                </Pressable>
+
+                <Pressable
+                  onPress={() => {
+                    setActionsVisible(false);
+                    setDeleteConfirmVisible(true);
+                  }}
+                  style={({ pressed }) => [styles.sheetAction, styles.sheetDangerAction, pressed && styles.pressedAction]}>
+                  <Ionicons name="trash-outline" size={20} color={palette.danger} />
+                  <Text style={[styles.sheetActionText, styles.sheetDangerText]}>삭제하기</Text>
+                </Pressable>
+
+                <Pressable onPress={() => setActionsVisible(false)} style={({ pressed }) => [styles.sheetCancel, pressed && styles.pressedAction]}>
+                  <Text style={styles.sheetCancelText}>취소</Text>
+                </Pressable>
+              </View>
+            </View>
+          </Modal>
+
+          <Modal
+            visible={deleteConfirmVisible}
+            transparent
+            animationType="fade"
+            onRequestClose={() => {
+              if (!deleting) {
+                setDeleteConfirmVisible(false);
+              }
+            }}>
+            <View style={styles.dialogOverlay}>
+              <Pressable
+                style={StyleSheet.absoluteFill}
+                onPress={() => {
+                  if (!deleting) {
+                    setDeleteConfirmVisible(false);
+                  }
+                }}
+              />
+              <View style={styles.confirmDialog}>
+                <Text style={styles.dialogTitle}>게시글 삭제</Text>
+                <Text style={styles.dialogText}>삭제한 게시글은 되돌릴 수 없어요. 정말 삭제할까요?</Text>
+                {actionError ? <Text style={styles.dialogError}>{actionError}</Text> : null}
+
+                <View style={styles.dialogButtonRow}>
+                  <Pressable
+                    disabled={deleting}
+                    onPress={() => setDeleteConfirmVisible(false)}
+                    style={({ pressed }) => [styles.dialogButton, styles.dialogCancelButton, pressed && styles.pressedAction]}>
+                    <Text style={styles.dialogCancelText}>취소</Text>
+                  </Pressable>
+                  <Pressable
+                    disabled={deleting}
+                    onPress={handleDelete}
+                    style={({ pressed }) => [
+                      styles.dialogButton,
+                      styles.dialogDangerButton,
+                      deleting && styles.disabledButton,
+                      pressed && styles.pressedAction,
+                    ]}>
+                    <Text style={styles.dialogDangerText}>{deleting ? '삭제 중...' : '삭제'}</Text>
+                  </Pressable>
+                </View>
+              </View>
             </View>
           </Modal>
         </>
@@ -557,6 +631,123 @@ const styles = StyleSheet.create({
     color: palette.white,
     fontSize: 15,
     fontWeight: '800',
+  },
+  dialogOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0,0,0,0.58)',
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.xl,
+  },
+  actionSheet: {
+    backgroundColor: palette.white,
+    borderWidth: 1,
+    borderColor: palette.border,
+    borderRadius: radius.xl,
+    padding: spacing.lg,
+    gap: spacing.sm,
+    shadowColor: palette.shadow,
+    shadowOffset: { width: 0, height: 18 },
+    shadowOpacity: 0.32,
+    shadowRadius: 24,
+    elevation: 12,
+  },
+  confirmDialog: {
+    backgroundColor: palette.white,
+    borderWidth: 1,
+    borderColor: palette.border,
+    borderRadius: radius.xl,
+    padding: spacing.lg,
+    gap: spacing.md,
+    shadowColor: palette.shadow,
+    shadowOffset: { width: 0, height: 18 },
+    shadowOpacity: 0.32,
+    shadowRadius: 24,
+    elevation: 12,
+  },
+  dialogTitle: {
+    color: palette.ink,
+    fontSize: 20,
+    fontWeight: '900',
+  },
+  dialogText: {
+    color: palette.muted,
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  dialogError: {
+    color: palette.danger,
+    fontSize: 13,
+    lineHeight: 19,
+  },
+  sheetAction: {
+    minHeight: 52,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: palette.border,
+    backgroundColor: palette.creamStrong,
+    paddingHorizontal: spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  sheetDangerAction: {
+    backgroundColor: '#3A242B',
+    borderColor: '#70424D',
+  },
+  sheetActionText: {
+    color: palette.ink,
+    fontSize: 15,
+    fontWeight: '800',
+  },
+  sheetDangerText: {
+    color: palette.danger,
+  },
+  sheetCancel: {
+    minHeight: 48,
+    borderRadius: radius.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sheetCancelText: {
+    color: palette.muted,
+    fontSize: 15,
+    fontWeight: '800',
+  },
+  dialogButtonRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  dialogButton: {
+    flex: 1,
+    minHeight: 50,
+    borderRadius: radius.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dialogCancelButton: {
+    backgroundColor: palette.creamStrong,
+    borderWidth: 1,
+    borderColor: palette.border,
+  },
+  dialogDangerButton: {
+    backgroundColor: palette.danger,
+  },
+  dialogCancelText: {
+    color: palette.ink,
+    fontSize: 15,
+    fontWeight: '800',
+  },
+  dialogDangerText: {
+    color: palette.white,
+    fontSize: 15,
+    fontWeight: '900',
+  },
+  pressedAction: {
+    opacity: 0.78,
+  },
+  disabledButton: {
+    opacity: 0.58,
   },
   imageModal: {
     flex: 1,

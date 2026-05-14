@@ -4,9 +4,14 @@ import { palette, radius, spacing } from '@/lib/theme';
 
 type FloatingWriteButtonProps = {
   onPress: () => void;
+  hidden?: boolean;
 };
 
-export function FloatingWriteButton({ onPress }: FloatingWriteButtonProps) {
+export function FloatingWriteButton({ onPress, hidden = false }: FloatingWriteButtonProps) {
+  if (hidden) {
+    return null;
+  }
+
   return (
     <Pressable onPress={onPress} style={({ pressed }) => [styles.button, pressed && styles.pressed]}>
       <Ionicons name="add" size={24} color={palette.white} />

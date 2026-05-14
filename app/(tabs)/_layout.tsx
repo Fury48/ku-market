@@ -1,13 +1,17 @@
 import { Tabs } from 'expo-router';
 import React from 'react';
+import { Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { HapticTab } from '@/components/haptic-tab';
 import { palette } from '@/lib/theme';
 import { useChatRooms } from '@/providers/chat-rooms-provider';
+import { useKeyboardOffset } from '@/hooks/use-keyboard-offset';
 
 export default function TabLayout() {
   const { unreadCount } = useChatRooms();
+  const keyboardOffset = useKeyboardOffset();
   const chatBadge = unreadCount > 99 ? '99+' : unreadCount || undefined;
+  const hideTabBar = Platform.OS === 'web' && keyboardOffset > 0;
 
   return (
     <Tabs
@@ -20,6 +24,7 @@ export default function TabLayout() {
         },
         tabBarButton: HapticTab,
         tabBarStyle: {
+          display: hideTabBar ? 'none' : 'flex',
           height: 100,
           paddingTop: 8,
           paddingBottom: 22,

@@ -63,7 +63,6 @@ export default function ComposePostScreen() {
             body: JSON.stringify(payload),
           });
 
-      Alert.alert('저장 완료', postId ? '게시글이 수정되었습니다.' : '게시글이 등록되었습니다.');
       router.replace(`/post/${response.post.id}` as Href);
     } catch (error) {
       Alert.alert('저장 실패', error instanceof Error ? error.message : '다시 시도해 주세요.');
