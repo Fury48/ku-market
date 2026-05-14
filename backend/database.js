@@ -1,104 +1,100 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
-const { createSeedState } = require('./seed-data');
-const { createEmptyState, schemaSql, schemaVersion, tableSchemas } = require('./schema');
+const { Pool } = require('pg');
 
-const DATA_PATH = path.join(__dirname, 'data.json');
-let state = null;
+require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
+
+const schemaVersion = 2;
+const schemaSql = fs.readFileSync(path.join(__dirname, 'schema.sql'), 'utf8');
+const connectionString = process.env.DATABASE_URL || process.env.SUPABASE_DB_URL;
+
+const pool = new Pool({
+  connectionString,
+  ssl: connectionString && process.env.PGSSLMODE !== 'disable' ? { rejectUnauthorized: false } : undefined,
+});
 
 function createError(statusCode, message) {
   return Object.assign(new Error(message), { statusCode });
 }
 
-function normalizeState(rawState) {
-  const base = createEmptyState();
-  const nextIds = {
-    ...base.nextIds,
-    ...(rawState?.nextIds || {}),
-  };
-
-  return {
-    ...base,
-    ...rawState,
-    schemaVersion: rawState?.schemaVersion || schemaVersion,
-    nextIds,
-    users: Array.isArray(rawState?.users) ? rawState.users : [],
-    posts: Array.isArray(rawState?.posts) ? rawState.posts : [],
-    post_images: Array.isArray(rawState?.post_images) ? rawState.post_images : [],
-    post_likes: Array.isArray(rawState?.post_likes) ? rawState.post_likes : [],
-    comments: Array.isArray(rawState?.comments) ? rawState.comments : [],
-    notifications: Array.isArray(rawState?.notifications) ? rawState.notifications : [],
-    chat_rooms: Array.isArray(rawState?.chat_rooms) ? rawState.chat_rooms : [],
-    messages: Array.isArray(rawState?.messages) ? rawState.messages : [],
-    sessions: Array.isArray(rawState?.sessions) ? rawState.sessions : [],
-    verification_codes: Array.isArray(rawState?.verification_codes) ? rawState.verification_codes : [],
-  };
-}
-
-function persist() {
-  fs.writeFileSync(DATA_PATH, JSON.stringify(state, null, 2));
-}
-
-function cleanupExpiredSessions() {
-  if (!state) {
-    return;
+function ensureDatabaseUrl() {
+  if (!connectionString) {
+    throw createError(500, 'DATABASE_URL 또는 SUPABASE_DB_URL 환경변수가 필요합니다.');
   }
-
-  const now = Date.now();
-  state.sessions = state.sessions.filter((session) => new Date(session.expires_at).getTime() > now);
 }
 
-function ensureState() {
-  if (!state) {
-    if (!fs.existsSync(DATA_PATH)) {
-      state = createSeedState();
-      persist();
-    } else {
-      state = normalizeState(JSON.parse(fs.readFileSync(DATA_PATH, 'utf8')));
-      cleanupExpiredSessions();
-      persist();
-    }
-  }
-
-  return state;
+async function query(text, params = []) {
+  ensureDatabaseUrl();
+  return pool.query(text, params);
 }
 
-function resetState() {
-  state = createSeedState();
-  persist();
-  return state;
+async function one(text, params = []) {
+  const result = await query(text, params);
+  return result.rows[0] || null;
 }
 
-function nextId(key) {
-  ensureState();
-  const id = state.nextIds[key];
-  state.nextIds[key] += 1;
-  return id;
+async function many(text, params = []) {
+  const result = await query(text, params);
+  return result.rows;
 }
 
 function nowIso() {
   return new Date().toISOString();
 }
 
-function getUserById(userId) {
-  ensureState();
-  return state.users.find((user) => user.id === Number(userId)) || null;
+function toIso(value) {
+  return value instanceof Date ? value.toISOString() : value;
 }
 
-function findUserByEmail(email) {
-  ensureState();
-  return state.users.find((user) => user.email.toLowerCase() === String(email).toLowerCase()) || null;
+function normalizePost(row) {
+  if (!row) {
+    return null;
+  }
+
+  return {
+    ...row,
+    is_price_offer_allowed: Boolean(row.is_price_offer_allowed),
+    tags: Array.isArray(row.tags) ? row.tags : [],
+    created_at: toIso(row.created_at),
+    updated_at: toIso(row.updated_at),
+  };
 }
 
-function findUserByUsername(username) {
-  ensureState();
-  return state.users.find((user) => user.username.toLowerCase() === String(username).toLowerCase()) || null;
+function normalizeUser(row) {
+  return row
+    ? {
+        ...row,
+        manner_score: Number(row.manner_score),
+        created_at: toIso(row.created_at),
+      }
+    : null;
 }
 
-function findUserByNickname(nickname) {
-  ensureState();
-  return state.users.find((user) => user.nickname.toLowerCase() === String(nickname).toLowerCase()) || null;
+function normalizeMessage(row) {
+  return row
+    ? {
+        ...row,
+        read_by: Array.isArray(row.read_by) ? row.read_by : [],
+        created_at: toIso(row.created_at),
+      }
+    : null;
+}
+
+async function getUserById(userId) {
+  return normalizeUser(await one('select * from users where id = $1', [Number(userId)]));
+}
+
+async function findUserByEmail(email) {
+  return normalizeUser(await one('select * from users where lower(email) = lower($1)', [String(email || '')]));
+}
+
+async function findUserByUsername(username) {
+  return normalizeUser(await one('select * from users where lower(username) = lower($1)', [String(username || '')]));
+}
+
+async function findUserByNickname(nickname) {
+  return normalizeUser(await one('select * from users where lower(nickname) = lower($1)', [String(nickname || '')]));
 }
 
 function toUserSummary(user) {
@@ -111,13 +107,9 @@ function toUserSummary(user) {
     studentYear: user.student_year,
     bio: user.bio,
     profileImageUrl: user.profile_image_url,
-    mannerScore: user.manner_score,
-    createdAt: user.created_at,
+    mannerScore: Number(user.manner_score),
+    createdAt: toIso(user.created_at),
   };
-}
-
-function getUserProfileImage(userId) {
-  return getUserById(userId)?.profile_image_url || '';
 }
 
 function toAuthorSummary(user) {
@@ -127,100 +119,103 @@ function toAuthorSummary(user) {
     department: user.department,
     studentYear: user.student_year,
     profileImageUrl: user.profile_image_url,
-    mannerScore: user.manner_score,
+    mannerScore: Number(user.manner_score),
   };
 }
 
-function getPostImages(postId) {
-  ensureState();
-  return state.post_images
-    .filter((image) => image.post_id === Number(postId))
-    .sort((a, b) => a.sort_order - b.sort_order);
+async function getUserProfileImage(userId) {
+  return (await getUserById(userId))?.profile_image_url || '';
 }
 
-function getPostCoverImage(postId) {
-  return getPostImages(postId)[0]?.image_url || '';
+async function getPostImages(postId) {
+  return many('select * from post_images where post_id = $1 order by sort_order asc, id asc', [Number(postId)]);
 }
 
-function getPostImage(postId, index) {
-  return getPostImages(postId)[Number(index) || 0]?.image_url || '';
+async function getPostCoverImage(postId) {
+  return (await getPostImages(postId))[0]?.image_url || '';
 }
 
-function getPostLikeCount(postId) {
-  ensureState();
-  return state.post_likes.filter((like) => like.post_id === Number(postId)).length;
+async function getPostImage(postId, index) {
+  return (await getPostImages(postId))[Number(index) || 0]?.image_url || '';
 }
 
-function getPostCommentCount(postId) {
-  ensureState();
-  return state.comments.filter((comment) => comment.post_id === Number(postId)).length;
+async function getPostLikeCount(postId) {
+  return Number((await one('select count(*)::int as count from post_likes where post_id = $1', [Number(postId)])).count);
 }
 
-function isPostLikedByUser(postId, userId) {
-  ensureState();
+async function getPostCommentCount(postId) {
+  return Number((await one('select count(*)::int as count from comments where post_id = $1', [Number(postId)])).count);
+}
+
+async function isPostLikedByUser(postId, userId) {
   if (!userId) {
     return false;
   }
 
-  return state.post_likes.some((like) => like.post_id === Number(postId) && like.user_id === Number(userId));
+  return Boolean(await one('select 1 from post_likes where post_id = $1 and user_id = $2', [Number(postId), Number(userId)]));
 }
 
-function toPostSummary(post, viewerId) {
-  const author = getUserById(post.author_id);
-  const coverImageUrl = getPostImages(post.id)[0]?.image_url || '';
+async function toPostSummary(post, viewerId) {
+  const normalizedPost = normalizePost(post);
+  const author = await getUserById(normalizedPost.author_id);
+  const images = await getPostImages(normalizedPost.id);
 
   return {
-    id: post.id,
-    postName: post.post_name,
-    title: post.title,
-    content: post.content,
-    category: post.category,
-    subcategory: post.subcategory,
-    price: post.price,
-    status: post.status,
-    tradeType: post.trade_type,
-    location: post.location,
-    isPriceOfferAllowed: post.is_price_offer_allowed,
-    recruitmentTarget: post.recruitment_target,
-    recruitmentCurrent: post.recruitment_current,
-    tags: Array.isArray(post.tags) ? post.tags : [],
-    createdAt: post.created_at,
-    updatedAt: post.updated_at,
-    coverImageUrl,
-    likeCount: getPostLikeCount(post.id),
-    commentCount: getPostCommentCount(post.id),
-    isLiked: isPostLikedByUser(post.id, viewerId),
+    id: normalizedPost.id,
+    postName: normalizedPost.post_name,
+    title: normalizedPost.title,
+    content: normalizedPost.content,
+    category: normalizedPost.category,
+    subcategory: normalizedPost.subcategory,
+    price: normalizedPost.price,
+    status: normalizedPost.status,
+    tradeType: normalizedPost.trade_type,
+    location: normalizedPost.location,
+    isPriceOfferAllowed: normalizedPost.is_price_offer_allowed,
+    recruitmentTarget: normalizedPost.recruitment_target,
+    recruitmentCurrent: normalizedPost.recruitment_current,
+    tags: normalizedPost.tags,
+    createdAt: normalizedPost.created_at,
+    updatedAt: normalizedPost.updated_at,
+    coverImageUrl: images[0]?.image_url || '',
+    likeCount: await getPostLikeCount(normalizedPost.id),
+    commentCount: await getPostCommentCount(normalizedPost.id),
+    isLiked: await isPostLikedByUser(normalizedPost.id, viewerId),
     author: toAuthorSummary(author),
   };
 }
 
-function toPostDetail(post, viewerId) {
+async function toPostDetail(post, viewerId) {
+  const normalizedPost = normalizePost(post);
+  const images = await getPostImages(normalizedPost.id);
+  const comments = await many(
+    `select c.*, u.id as author_id, u.nickname, u.profile_image_url
+       from comments c
+       join users u on u.id = c.user_id
+      where c.post_id = $1
+      order by c.created_at asc, c.id asc`,
+    [normalizedPost.id]
+  );
+
   return {
-    ...toPostSummary(post, viewerId),
-    images: getPostImages(post.id).map((image) => image.image_url),
-    comments: state.comments
-      .filter((comment) => comment.post_id === post.id)
-      .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
-      .map((comment) => {
-        const author = getUserById(comment.user_id);
-        return {
-          id: comment.id,
-          content: comment.content,
-          createdAt: comment.created_at,
-          author: {
-            id: author.id,
-            nickname: author.nickname,
-            profileImageUrl: author.profile_image_url,
-          },
-        };
-      }),
-    isMine: Number(viewerId) === post.author_id,
+    ...(await toPostSummary(normalizedPost, viewerId)),
+    images: images.map((image) => image.image_url),
+    comments: comments.map((comment) => ({
+      id: comment.id,
+      content: comment.content,
+      createdAt: toIso(comment.created_at),
+      author: {
+        id: comment.author_id,
+        nickname: comment.nickname,
+        profileImageUrl: comment.profile_image_url,
+      },
+    })),
+    isMine: Number(viewerId) === normalizedPost.author_id,
   };
 }
 
-function getPostById(postId) {
-  ensureState();
-  const post = state.posts.find((item) => item.id === Number(postId));
+async function getPostById(postId) {
+  const post = normalizePost(await one('select * from posts where id = $1', [Number(postId)]));
   if (!post) {
     throw createError(404, '게시글을 찾을 수 없습니다.');
   }
@@ -228,253 +223,120 @@ function getPostById(postId) {
   return post;
 }
 
-function toNotificationSummary(notification) {
-  const actor = getUserById(notification.actor_id);
-  const post = getPostById(notification.post_id);
+async function getAccountStats(userId) {
+  const id = Number(userId);
+  const stats = await one(
+    `select
+       (select count(*)::int from posts where author_id = $1) as my_post_count,
+       (select count(*)::int from post_likes where user_id = $1) as liked_post_count,
+       (select count(*)::int from chat_rooms where seller_id = $1 or buyer_id = $1) as chat_room_count`,
+    [id]
+  );
 
   return {
-    id: notification.id,
-    type: notification.type,
-    message: notification.message,
-    postId: post.id,
-    postTitle: post.title,
-    createdAt: notification.created_at,
-    readAt: notification.read_at || null,
-    actor: {
-      id: actor.id,
-      nickname: actor.nickname,
-      profileImageUrl: actor.profile_image_url,
-    },
+    myPostCount: Number(stats.my_post_count),
+    likedPostCount: Number(stats.liked_post_count),
+    chatRoomCount: Number(stats.chat_room_count),
   };
 }
 
-function createPostNotification({ recipientId, actorId, post, type, message }) {
-  ensureState();
-
-  if (Number(recipientId) === Number(actorId)) {
-    return;
-  }
-
-  state.notifications.push({
-    id: nextId('notifications'),
-    recipient_id: Number(recipientId),
-    actor_id: Number(actorId),
-    post_id: post.id,
-    type,
-    message,
-    read_at: null,
-    created_at: nowIso(),
-  });
-}
-
-function getNotifications(userId) {
-  ensureState();
-  const notifications = state.notifications
-    .filter((notification) => notification.recipient_id === Number(userId))
-    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-    .map(toNotificationSummary);
-
-  return {
-    notifications,
-    unreadCount: notifications.filter((notification) => !notification.readAt).length,
-  };
-}
-
-function markNotificationsRead(userId) {
-  ensureState();
-  const timestamp = nowIso();
-  let changed = false;
-
-  state.notifications.forEach((notification) => {
-    if (notification.recipient_id === Number(userId) && !notification.read_at) {
-      notification.read_at = timestamp;
-      changed = true;
-    }
-  });
-
-  if (changed) {
-    persist();
-  }
-
-  return getNotifications(userId);
-}
-
-function getAccountStats(userId) {
-  ensureState();
-  return {
-    myPostCount: state.posts.filter((post) => post.author_id === Number(userId)).length,
-    likedPostCount: state.post_likes.filter((like) => like.user_id === Number(userId)).length,
-    chatRoomCount: state.chat_rooms.filter((room) => room.seller_id === Number(userId) || room.buyer_id === Number(userId)).length,
-  };
-}
-
-function createVerificationCode(email) {
-  ensureState();
+async function createVerificationCode(email) {
   const normalizedEmail = String(email).trim().toLowerCase();
   const code = String(Math.floor(1000 + Math.random() * 9000));
   const ttlMinutes = Number(process.env.VERIFICATION_CODE_TTL_MINUTES || 10);
   const expiresAt = new Date(Date.now() + ttlMinutes * 60 * 1000).toISOString();
 
-  state.verification_codes = state.verification_codes.filter((item) => item.email !== normalizedEmail);
-  state.verification_codes.push({
-    email: normalizedEmail,
-    code,
-    verified: false,
-    created_at: nowIso(),
-    expires_at: expiresAt,
-  });
-  persist();
+  await query(
+    `insert into verification_codes (email, code, verified, created_at, expires_at)
+     values ($1, $2, false, $3, $4)
+     on conflict (email) do update set code = excluded.code, verified = false, created_at = excluded.created_at, expires_at = excluded.expires_at`,
+    [normalizedEmail, code, nowIso(), expiresAt]
+  );
 
   return code;
 }
 
-function deleteVerificationCode(email) {
-  ensureState();
-  const normalizedEmail = String(email).trim().toLowerCase();
-  state.verification_codes = state.verification_codes.filter((item) => item.email !== normalizedEmail);
-  persist();
+async function deleteVerificationCode(email) {
+  await query('delete from verification_codes where email = $1', [String(email || '').trim().toLowerCase()]);
 }
 
-function verifyCode(email, code) {
-  ensureState();
+async function verifyCode(email, code) {
   const normalizedEmail = String(email).trim().toLowerCase();
-  const target = state.verification_codes.find((item) => item.email === normalizedEmail && item.code === String(code).trim());
+  const target = await one('select * from verification_codes where email = $1 and code = $2', [
+    normalizedEmail,
+    String(code).trim(),
+  ]);
 
   if (!target) {
     throw createError(400, '인증번호가 일치하지 않습니다.');
   }
 
-  if (target.expires_at && new Date(target.expires_at).getTime() < Date.now()) {
-    deleteVerificationCode(normalizedEmail);
+  if (new Date(target.expires_at).getTime() < Date.now()) {
+    await deleteVerificationCode(normalizedEmail);
     throw createError(400, '인증번호가 만료되었습니다. 다시 전송해 주세요.');
   }
 
-  target.verified = true;
-  persist();
+  await query('update verification_codes set verified = true where email = $1', [normalizedEmail]);
 }
 
-function ensureVerifiedEmail(email) {
-  ensureState();
-  const target = state.verification_codes.find(
-    (item) => item.email === String(email).trim().toLowerCase() && item.verified
-  );
+async function ensureVerifiedEmail(email) {
+  const normalizedEmail = String(email).trim().toLowerCase();
+  const target = await one('select * from verification_codes where email = $1 and verified = true', [normalizedEmail]);
 
   if (!target) {
     throw createError(400, '이메일 인증이 필요합니다.');
   }
 
-  if (target.expires_at && new Date(target.expires_at).getTime() < Date.now()) {
-    deleteVerificationCode(email);
+  if (new Date(target.expires_at).getTime() < Date.now()) {
+    await deleteVerificationCode(normalizedEmail);
     throw createError(400, '이메일 인증이 만료되었습니다. 다시 인증해 주세요.');
   }
 }
 
-function createSession(userId, persisted) {
-  ensureState();
+async function createSession(userId, persisted) {
   const token = crypto.randomBytes(24).toString('hex');
-  const expires_at = new Date(
+  const expiresAt = new Date(
     Date.now() + (persisted ? 1000 * 60 * 60 * 24 * 30 : 1000 * 60 * 60 * 24 * 7)
   ).toISOString();
 
-  state.sessions.push({
+  await query('insert into sessions (token, user_id, persisted, expires_at) values ($1, $2, $3, $4)', [
     token,
-    user_id: Number(userId),
-    persisted: Boolean(persisted),
-    expires_at,
-  });
-  persist();
+    Number(userId),
+    Boolean(persisted),
+    expiresAt,
+  ]);
 
   return token;
 }
 
-function getUserBySessionToken(token) {
-  ensureState();
+async function getUserBySessionToken(token) {
   if (!token) {
     return null;
   }
 
-  const session = state.sessions.find((item) => item.token === token);
+  const session = await one('select * from sessions where token = $1', [token]);
   if (!session) {
+    return null;
+  }
+
+  if (new Date(session.expires_at).getTime() <= Date.now()) {
+    await deleteSession(token);
     return null;
   }
 
   return getUserById(session.user_id);
 }
 
-function deleteSession(token) {
-  ensureState();
-  if (!token) {
-    return;
+async function deleteSession(token) {
+  if (token) {
+    await query('delete from sessions where token = $1', [token]);
   }
-
-  state.sessions = state.sessions.filter((session) => session.token !== token);
-  persist();
-}
-
-function matchesQuery(post, query) {
-  if (!query) {
-    return true;
-  }
-
-  const needle = String(query).trim().toLowerCase();
-  return post.title.toLowerCase().includes(needle) || post.content.toLowerCase().includes(needle);
-}
-
-function getFeed({ viewerId, board = 'main', type, subcategory, query }) {
-  ensureState();
-  let posts = [...state.posts];
-
-  if (board !== 'main') {
-    posts = posts.filter((post) => post.category === board);
-  } else if (type) {
-    posts = posts.filter((post) => post.category === type);
-  }
-
-  if (subcategory) {
-    posts = posts.filter((post) => post.subcategory === subcategory);
-  }
-
-  if (query) {
-    posts = posts.filter((post) => matchesQuery(post, query));
-  }
-
-  return posts
-    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-    .map((post) => toPostSummary(post, viewerId));
-}
-
-function getPostDetail(postId, viewerId) {
-  return toPostDetail(getPostById(postId), viewerId);
-}
-
-function getLikedPosts(userId) {
-  ensureState();
-  const likedPostIds = state.post_likes.filter((like) => like.user_id === Number(userId)).map((like) => like.post_id);
-
-  return state.posts
-    .filter((post) => likedPostIds.includes(post.id))
-    .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
-    .map((post) => toPostSummary(post, userId));
-}
-
-function getMyPosts(userId) {
-  ensureState();
-  return state.posts
-    .filter((post) => post.author_id === Number(userId))
-    .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
-    .map((post) => toPostSummary(post, userId));
 }
 
 function defaultStatusForCategory(category) {
-  if (category === 'market') {
-    return '판매중';
-  }
-  if (category === 'recruit') {
-    return '모집중';
-  }
-  if (category === 'promo') {
-    return '진행중';
-  }
+  if (category === 'market') return '판매중';
+  if (category === 'recruit') return '모집중';
+  if (category === 'promo') return '진행중';
   return '일반';
 }
 
@@ -482,134 +344,210 @@ function validatePostPayload(payload) {
   if (!payload || !payload.title || !payload.content || !payload.category || !payload.subcategory) {
     throw createError(400, '필수 입력값이 누락되었습니다.');
   }
-
   if (!Array.isArray(payload.images) || payload.images.length === 0) {
-    throw createError(400, '사진은 최소 1장 이상 필요합니다.');
+    throw createError(400, '사진은 최소 1개 이상 필요합니다.');
   }
-
   if (payload.images.length > 10) {
-    throw createError(400, '사진은 최대 10장까지 등록할 수 있습니다.');
+    throw createError(400, '사진은 최대 10개까지 등록할 수 있습니다.');
   }
-
   if (payload.category === 'market' && (payload.price === null || payload.price === undefined || payload.price === '')) {
     throw createError(400, '중고거래 글에는 가격이 필요합니다.');
   }
 }
 
-function replacePostImages(postId, images) {
-  ensureState();
-  state.post_images = state.post_images.filter((image) => image.post_id !== Number(postId));
+function matchesQuerySql(queryValue, params) {
+  if (!queryValue) {
+    return null;
+  }
 
-  images.forEach((imageUrl, index) => {
-    state.post_images.push({
-      id: nextId('postImages'),
-      post_id: Number(postId),
-      image_url: imageUrl,
-      sort_order: index,
-    });
-  });
+  params.push(`%${String(queryValue).trim()}%`);
+  return `(title ilike $${params.length} or content ilike $${params.length})`;
 }
 
-function createPost(userId, payload) {
-  ensureState();
-  validatePostPayload(payload);
+async function getFeed({ viewerId, board = 'main', type, subcategory, query: search }) {
+  const params = [];
+  const where = [];
 
-  const timestamp = nowIso();
-  const post = {
-    id: nextId('posts'),
-    post_name: `post-${Date.now()}`,
-    author_id: Number(userId),
-    title: String(payload.title).trim(),
-    content: String(payload.content).trim(),
-    category: payload.category,
-    subcategory: payload.subcategory,
-    price: payload.category === 'market' ? Number(payload.price) || 0 : null,
-    status: payload.status || defaultStatusForCategory(payload.category),
-    trade_type: payload.category === 'market' ? payload.tradeType || 'direct' : null,
-    location: payload.location || null,
-    is_price_offer_allowed: Boolean(payload.isPriceOfferAllowed),
-    recruitment_target: payload.category === 'recruit' ? Number(payload.recruitmentTarget) || null : null,
-    recruitment_current: payload.category === 'recruit' ? Number(payload.recruitmentCurrent) || 0 : null,
-    tags: Array.isArray(payload.tags) ? payload.tags : [],
-    created_at: timestamp,
-    updated_at: timestamp,
-  };
+  if (board && board !== 'main') {
+    params.push(board);
+    where.push(`category = $${params.length}`);
+  } else if (type) {
+    params.push(type);
+    where.push(`category = $${params.length}`);
+  }
+  if (subcategory) {
+    params.push(subcategory);
+    where.push(`subcategory = $${params.length}`);
+  }
 
-  state.posts.push(post);
-  replacePostImages(post.id, payload.images);
-  persist();
+  const textSearch = matchesQuerySql(search, params);
+  if (textSearch) {
+    where.push(textSearch);
+  }
 
-  return toPostDetail(post, userId);
+  let sql = 'select * from posts';
+  if (where.length > 0) {
+    sql += ` where ${where.join(' and ')}`;
+  }
+  sql += ' order by created_at desc, id desc';
+
+  const posts = await many(sql, params);
+  return Promise.all(posts.map((post) => toPostSummary(post, viewerId)));
 }
 
-function updatePost(userId, postId, payload) {
-  ensureState();
+async function getPostDetail(postId, viewerId) {
+  return toPostDetail(await getPostById(postId), viewerId);
+}
+
+async function getLikedPosts(userId) {
+  const posts = await many(
+    `select p.*
+       from post_likes l
+       join posts p on p.id = l.post_id
+      where l.user_id = $1
+      order by p.updated_at desc, p.id desc`,
+    [Number(userId)]
+  );
+  return Promise.all(posts.map((post) => toPostSummary(post, userId)));
+}
+
+async function getMyPosts(userId) {
+  const posts = await many('select * from posts where author_id = $1 order by updated_at desc, id desc', [Number(userId)]);
+  return Promise.all(posts.map((post) => toPostSummary(post, userId)));
+}
+
+async function replacePostImages(client, postId, images) {
+  await client.query('delete from post_images where post_id = $1', [Number(postId)]);
+
+  for (const [index, imageUrl] of images.entries()) {
+    await client.query('insert into post_images (post_id, image_url, sort_order) values ($1, $2, $3)', [
+      Number(postId),
+      imageUrl,
+      index,
+    ]);
+  }
+}
+
+async function createPost(userId, payload) {
   validatePostPayload(payload);
-  const post = getPostById(postId);
+  ensureDatabaseUrl();
+  const client = await pool.connect();
+
+  try {
+    await client.query('begin');
+    const timestamp = nowIso();
+    const result = await client.query(
+      `insert into posts
+       (post_name, author_id, title, content, category, subcategory, price, status, trade_type, location,
+        is_price_offer_allowed, recruitment_target, recruitment_current, tags, created_at, updated_at)
+       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14::jsonb, $15, $16)
+       returning *`,
+      [
+        `post-${Date.now()}`,
+        Number(userId),
+        String(payload.title).trim(),
+        String(payload.content).trim(),
+        payload.category,
+        payload.subcategory,
+        payload.category === 'market' ? Number(payload.price) || 0 : null,
+        payload.status || defaultStatusForCategory(payload.category),
+        payload.category === 'market' ? payload.tradeType || 'direct' : null,
+        payload.location || null,
+        Boolean(payload.isPriceOfferAllowed),
+        payload.category === 'recruit' ? Number(payload.recruitmentTarget) || null : null,
+        payload.category === 'recruit' ? Number(payload.recruitmentCurrent) || 0 : null,
+        JSON.stringify(Array.isArray(payload.tags) ? payload.tags : []),
+        timestamp,
+        timestamp,
+      ]
+    );
+    await replacePostImages(client, result.rows[0].id, payload.images);
+    await client.query('commit');
+    return getPostDetail(result.rows[0].id, userId);
+  } catch (error) {
+    await client.query('rollback');
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+async function updatePost(userId, postId, payload) {
+  validatePostPayload(payload);
+  const post = await getPostById(postId);
 
   if (post.author_id !== Number(userId)) {
     throw createError(403, '본인이 작성한 게시글만 수정할 수 있습니다.');
   }
 
-  post.title = String(payload.title).trim();
-  post.content = String(payload.content).trim();
-  post.category = payload.category;
-  post.subcategory = payload.subcategory;
-  post.price = payload.category === 'market' ? Number(payload.price) || 0 : null;
-  post.status = payload.status || post.status;
-  post.trade_type = payload.category === 'market' ? payload.tradeType || 'direct' : null;
-  post.location = payload.location || null;
-  post.is_price_offer_allowed = Boolean(payload.isPriceOfferAllowed);
-  post.recruitment_target = payload.category === 'recruit' ? Number(payload.recruitmentTarget) || null : null;
-  post.recruitment_current = payload.category === 'recruit' ? Number(payload.recruitmentCurrent) || 0 : null;
-  post.tags = Array.isArray(payload.tags) ? payload.tags : [];
-  post.updated_at = nowIso();
-
-  replacePostImages(post.id, payload.images);
-  persist();
-
-  return toPostDetail(post, userId);
+  ensureDatabaseUrl();
+  const client = await pool.connect();
+  try {
+    await client.query('begin');
+    await client.query(
+      `update posts
+          set title = $1, content = $2, category = $3, subcategory = $4, price = $5, status = $6,
+              trade_type = $7, location = $8, is_price_offer_allowed = $9, recruitment_target = $10,
+              recruitment_current = $11, tags = $12::jsonb, updated_at = $13
+        where id = $14`,
+      [
+        String(payload.title).trim(),
+        String(payload.content).trim(),
+        payload.category,
+        payload.subcategory,
+        payload.category === 'market' ? Number(payload.price) || 0 : null,
+        payload.status || post.status,
+        payload.category === 'market' ? payload.tradeType || 'direct' : null,
+        payload.location || null,
+        Boolean(payload.isPriceOfferAllowed),
+        payload.category === 'recruit' ? Number(payload.recruitmentTarget) || null : null,
+        payload.category === 'recruit' ? Number(payload.recruitmentCurrent) || 0 : null,
+        JSON.stringify(Array.isArray(payload.tags) ? payload.tags : []),
+        nowIso(),
+        post.id,
+      ]
+    );
+    await replacePostImages(client, post.id, payload.images);
+    await client.query('commit');
+    return getPostDetail(post.id, userId);
+  } catch (error) {
+    await client.query('rollback');
+    throw error;
+  } finally {
+    client.release();
+  }
 }
 
-function deletePost(userId, postId) {
-  ensureState();
-  const post = getPostById(postId);
-
+async function deletePost(userId, postId) {
+  const post = await getPostById(postId);
   if (post.author_id !== Number(userId)) {
     throw createError(403, '본인이 작성한 게시글만 삭제할 수 있습니다.');
   }
 
-  const roomIds = state.chat_rooms.filter((room) => room.post_id === post.id).map((room) => room.id);
-
-  state.posts = state.posts.filter((item) => item.id !== post.id);
-  state.post_images = state.post_images.filter((item) => item.post_id !== post.id);
-  state.post_likes = state.post_likes.filter((item) => item.post_id !== post.id);
-  state.comments = state.comments.filter((item) => item.post_id !== post.id);
-  state.notifications = state.notifications.filter((item) => item.post_id !== post.id);
-  state.chat_rooms = state.chat_rooms.filter((item) => item.post_id !== post.id);
-  state.messages = state.messages.filter((item) => !roomIds.includes(item.room_id));
-  persist();
+  await query('delete from posts where id = $1', [post.id]);
 }
 
-function toggleLike(userId, postId) {
-  ensureState();
-  const post = getPostById(postId);
+async function createPostNotification({ recipientId, actorId, post, type, message }) {
+  if (Number(recipientId) === Number(actorId)) {
+    return;
+  }
 
-  const existing = state.post_likes.find(
-    (like) => like.post_id === Number(postId) && like.user_id === Number(userId)
+  await query(
+    'insert into notifications (recipient_id, actor_id, post_id, type, message, created_at) values ($1, $2, $3, $4, $5, $6)',
+    [Number(recipientId), Number(actorId), post.id, type, message, nowIso()]
   );
+}
+
+async function toggleLike(userId, postId) {
+  const post = await getPostById(postId);
+  const existing = await one('select id from post_likes where post_id = $1 and user_id = $2', [post.id, Number(userId)]);
 
   if (existing) {
-    state.post_likes = state.post_likes.filter((like) => like.id !== existing.id);
+    await query('delete from post_likes where id = $1', [existing.id]);
   } else {
-    state.post_likes.push({
-      id: nextId('postLikes'),
-      post_id: Number(postId),
-      user_id: Number(userId),
-      created_at: nowIso(),
-    });
-    const actor = getUserById(userId);
-    createPostNotification({
+    await query('insert into post_likes (post_id, user_id, created_at) values ($1, $2, $3)', [post.id, Number(userId), nowIso()]);
+    const actor = await getUserById(userId);
+    await createPostNotification({
       recipientId: post.author_id,
       actorId: userId,
       post,
@@ -618,37 +556,70 @@ function toggleLike(userId, postId) {
     });
   }
 
-  persist();
   return getPostDetail(postId, userId);
 }
 
-function addComment(userId, postId, content) {
-  ensureState();
-  const post = getPostById(postId);
-
+async function addComment(userId, postId, content) {
+  const post = await getPostById(postId);
   if (!String(content || '').trim()) {
     throw createError(400, '댓글 내용을 입력해 주세요.');
   }
 
-  state.comments.push({
-    id: nextId('comments'),
-    post_id: post.id,
-    user_id: Number(userId),
-    content: String(content).trim(),
-    created_at: nowIso(),
-  });
-  const actor = getUserById(userId);
-  createPostNotification({
+  await query('insert into comments (post_id, user_id, content, created_at) values ($1, $2, $3, $4)', [
+    post.id,
+    Number(userId),
+    String(content).trim(),
+    nowIso(),
+  ]);
+  await query('update posts set updated_at = $1 where id = $2', [nowIso(), post.id]);
+
+  const actor = await getUserById(userId);
+  await createPostNotification({
     recipientId: post.author_id,
     actorId: userId,
     post,
     type: 'comment',
     message: `${actor.nickname}님이 내 게시글에 댓글을 남겼어요.`,
   });
-  post.updated_at = nowIso();
-  persist();
 
   return getPostDetail(postId, userId);
+}
+
+async function getNotifications(userId) {
+  const notifications = await many(
+    `select n.*, p.title as post_title, u.nickname, u.profile_image_url
+       from notifications n
+       join posts p on p.id = n.post_id
+       join users u on u.id = n.actor_id
+      where n.recipient_id = $1
+      order by n.created_at desc, n.id desc`,
+    [Number(userId)]
+  );
+
+  const mapped = notifications.map((notification) => ({
+    id: notification.id,
+    type: notification.type,
+    message: notification.message,
+    postId: notification.post_id,
+    postTitle: notification.post_title,
+    createdAt: toIso(notification.created_at),
+    readAt: notification.read_at ? toIso(notification.read_at) : null,
+    actor: {
+      id: notification.actor_id,
+      nickname: notification.nickname,
+      profileImageUrl: notification.profile_image_url,
+    },
+  }));
+
+  return {
+    notifications: mapped,
+    unreadCount: mapped.filter((notification) => !notification.readAt).length,
+  };
+}
+
+async function markNotificationsRead(userId) {
+  await query('update notifications set read_at = coalesce(read_at, now()) where recipient_id = $1', [Number(userId)]);
+  return getNotifications(userId);
 }
 
 function ensureRoomParticipant(room, userId) {
@@ -657,116 +628,93 @@ function ensureRoomParticipant(room, userId) {
   }
 }
 
-function getRoomOtherUser(room, userId) {
-  return room.seller_id === Number(userId) ? getUserById(room.buyer_id) : getUserById(room.seller_id);
-}
+async function getChatRooms(userId) {
+  const rooms = await many(
+    `select r.*, p.title as post_title,
+            other_user.id as other_user_id, other_user.nickname, other_user.profile_image_url
+       from chat_rooms r
+       join posts p on p.id = r.post_id
+       join users other_user on other_user.id = case when r.seller_id = $1 then r.buyer_id else r.seller_id end
+      where r.seller_id = $1 or r.buyer_id = $1`,
+    [Number(userId)]
+  );
 
-function getChatRooms(userId) {
-  ensureState();
-  return state.chat_rooms
-    .filter((room) => room.seller_id === Number(userId) || room.buyer_id === Number(userId))
-    .map((room) => {
-      const otherUser = getRoomOtherUser(room, userId);
-      const post = getPostById(room.post_id);
-      const roomMessages = state.messages
-        .filter((message) => message.room_id === room.id)
-        .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-      const lastMessage = roomMessages[roomMessages.length - 1];
-      const unreadCount = roomMessages.filter(
+  const summaries = await Promise.all(
+    rooms.map(async (room) => {
+      const messages = (await many('select * from messages where room_id = $1 order by created_at asc, id asc', [room.id])).map(normalizeMessage);
+      const lastMessage = messages[messages.length - 1];
+      const unreadCount = messages.filter(
         (message) => message.sender_id !== Number(userId) && !(message.read_by || []).includes(Number(userId))
       ).length;
 
       return {
         id: room.id,
-        postId: post.id,
-        postTitle: post.title,
+        postId: room.post_id,
+        postTitle: room.post_title,
         otherUser: {
-          id: otherUser.id,
-          nickname: otherUser.nickname,
-          profileImageUrl: otherUser.profile_image_url,
+          id: room.other_user_id,
+          nickname: room.nickname,
+          profileImageUrl: room.profile_image_url,
         },
         lastMessage: lastMessage?.content || (lastMessage?.image_url ? '이미지를 보냈어요.' : ''),
-        lastMessageAt: lastMessage?.created_at || room.created_at,
+        lastMessageAt: lastMessage?.created_at || toIso(room.created_at),
         unreadCount,
       };
     })
-    .sort((a, b) => new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime());
+  );
+
+  return summaries.sort((a, b) => new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime());
 }
 
-function openChatRoom(userId, postId) {
-  ensureState();
-  const post = getPostById(postId);
-
+async function openChatRoom(userId, postId) {
+  const post = await getPostById(postId);
   if (post.author_id === Number(userId)) {
     throw createError(400, '내 게시글에는 채팅방을 열 수 없습니다.');
   }
 
-  let room = state.chat_rooms.find(
-    (item) => item.post_id === post.id && item.seller_id === post.author_id && item.buyer_id === Number(userId)
+  const room = await one(
+    `insert into chat_rooms (post_id, seller_id, buyer_id, created_at)
+     values ($1, $2, $3, $4)
+     on conflict (post_id, seller_id, buyer_id) do update set post_id = excluded.post_id
+     returning id`,
+    [post.id, post.author_id, Number(userId), nowIso()]
   );
-
-  if (!room) {
-    room = {
-      id: nextId('chatRooms'),
-      post_id: post.id,
-      seller_id: post.author_id,
-      buyer_id: Number(userId),
-      created_at: nowIso(),
-    };
-    state.chat_rooms.push(room);
-    persist();
-  }
 
   return room.id;
 }
 
-function getChatRoomDetail(userId, roomId) {
-  ensureState();
-  const room = state.chat_rooms.find((item) => item.id === Number(roomId));
-
+async function getChatRoom(roomId) {
+  const room = await one('select * from chat_rooms where id = $1', [Number(roomId)]);
   if (!room) {
     throw createError(404, '채팅방을 찾을 수 없습니다.');
   }
+  return room;
+}
 
+async function markRoomMessagesRead(roomId, userId) {
+  await query(
+    `update messages
+        set read_by = array_append(read_by, $2)
+      where room_id = $1 and sender_id <> $2 and not ($2 = any(read_by))`,
+    [Number(roomId), Number(userId)]
+  );
+}
+
+async function getChatRoomDetail(userId, roomId) {
+  const room = await getChatRoom(roomId);
   ensureRoomParticipant(room, userId);
+  await markRoomMessagesRead(room.id, userId);
 
-  let changed = false;
-  state.messages.forEach((message) => {
-    if (
-      message.room_id === room.id &&
-      message.sender_id !== Number(userId) &&
-      !(message.read_by || []).includes(Number(userId))
-    ) {
-      message.read_by = [...(message.read_by || []), Number(userId)];
-      changed = true;
-    }
-  });
-
-  if (changed) {
-    persist();
-  }
-
-  const otherUser = getRoomOtherUser(room, userId);
-  const post = getPostById(room.post_id);
-  const messages = state.messages
-    .filter((message) => message.room_id === room.id)
-    .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
-    .map((message) => {
-      const sender = getUserById(message.sender_id);
-      return {
-        id: message.id,
-        clientId: message.client_id || null,
-        content: message.content,
-        imageUrl: message.image_url,
-        createdAt: message.created_at,
-        isMine: sender.id === Number(userId),
-        sender: {
-          id: sender.id,
-          nickname: sender.nickname,
-          profileImageUrl: sender.profile_image_url,
-        },
-      };
-    });
+  const otherUser = await getUserById(room.seller_id === Number(userId) ? room.buyer_id : room.seller_id);
+  const post = await getPostById(room.post_id);
+  const messages = await many(
+    `select m.*, u.nickname, u.profile_image_url
+       from messages m
+       join users u on u.id = m.sender_id
+      where m.room_id = $1
+      order by m.created_at asc, m.id asc`,
+    [room.id]
+  );
 
   return {
     id: room.id,
@@ -777,90 +725,83 @@ function getChatRoomDetail(userId, roomId) {
       nickname: otherUser.nickname,
       profileImageUrl: otherUser.profile_image_url,
     },
-    messages,
+    messages: messages.map((message) => ({
+      id: message.id,
+      clientId: message.client_id || null,
+      content: message.content,
+      imageUrl: message.image_url,
+      createdAt: toIso(message.created_at),
+      isMine: message.sender_id === Number(userId),
+      sender: {
+        id: message.sender_id,
+        nickname: message.nickname,
+        profileImageUrl: message.profile_image_url,
+      },
+    })),
   };
 }
 
-function getChatMessagesAfter(userId, roomId, afterId) {
-  ensureState();
-  const room = state.chat_rooms.find((item) => item.id === Number(roomId));
-
-  if (!room) {
-    throw createError(404, '채팅방을 찾을 수 없습니다.');
-  }
-
+async function getChatMessagesAfter(userId, roomId, afterId) {
+  const room = await getChatRoom(roomId);
   ensureRoomParticipant(room, userId);
+  await markRoomMessagesRead(room.id, userId);
 
-  const minimumId = Number(afterId) || 0;
-  let changed = false;
-  const messages = state.messages
-    .filter((message) => message.room_id === room.id && message.id > minimumId)
-    .sort((a, b) => a.id - b.id)
-    .map((message) => {
-      if (message.sender_id !== Number(userId) && !(message.read_by || []).includes(Number(userId))) {
-        message.read_by = [...(message.read_by || []), Number(userId)];
-        changed = true;
-      }
+  const messages = await many(
+    `select m.*, u.nickname, u.profile_image_url
+       from messages m
+       join users u on u.id = m.sender_id
+      where m.room_id = $1 and m.id > $2
+      order by m.id asc`,
+    [room.id, Number(afterId) || 0]
+  );
 
-      const sender = getUserById(message.sender_id);
-      return {
-        id: message.id,
-        clientId: message.client_id || null,
-        content: message.content,
-        imageUrl: message.image_url,
-        createdAt: message.created_at,
-        isMine: sender.id === Number(userId),
-        sender: {
-          id: sender.id,
-          nickname: sender.nickname,
-          profileImageUrl: sender.profile_image_url,
-        },
-      };
-    });
-
-  if (changed) {
-    persist();
-  }
-
-  return messages;
+  return messages.map((message) => ({
+    id: message.id,
+    clientId: message.client_id || null,
+    content: message.content,
+    imageUrl: message.image_url,
+    createdAt: toIso(message.created_at),
+    isMine: message.sender_id === Number(userId),
+    sender: {
+      id: message.sender_id,
+      nickname: message.nickname,
+      profileImageUrl: message.profile_image_url,
+    },
+  }));
 }
 
-function createChatMessage(userId, roomId, payload) {
-  ensureState();
-  const room = state.chat_rooms.find((item) => item.id === Number(roomId));
-
-  if (!room) {
-    throw createError(404, '채팅방을 찾을 수 없습니다.');
-  }
-
+async function createChatMessage(userId, roomId, payload) {
+  const room = await getChatRoom(roomId);
   ensureRoomParticipant(room, userId);
-
   if (!String(payload.content || '').trim() && !payload.imageUrl) {
     throw createError(400, '메시지 또는 이미지를 입력해 주세요.');
   }
 
-  const message = {
-    id: nextId('messages'),
-    room_id: room.id,
-    sender_id: Number(userId),
-    client_id: payload.clientId || null,
-    content: String(payload.content || '').trim(),
-    image_url: payload.imageUrl || null,
-    read_by: [Number(userId)],
-    created_at: nowIso(),
-  };
+  const message = normalizeMessage(
+    await one(
+      `insert into messages (room_id, sender_id, client_id, content, image_url, read_by, created_at)
+       values ($1, $2, $3, $4, $5, $6, $7)
+       returning *`,
+      [
+        room.id,
+        Number(userId),
+        payload.clientId || null,
+        String(payload.content || '').trim(),
+        payload.imageUrl || null,
+        [Number(userId)],
+        nowIso(),
+      ]
+    )
+  );
+  const sender = await getUserById(message.sender_id);
 
-  state.messages.push(message);
-  persist();
-
-  const sender = getUserById(message.sender_id);
   return {
     id: message.id,
     clientId: message.client_id || null,
     content: message.content,
     imageUrl: message.image_url,
     createdAt: message.created_at,
-    isMine: sender.id === Number(userId),
+    isMine: true,
     sender: {
       id: sender.id,
       nickname: sender.nickname,
@@ -869,66 +810,67 @@ function createChatMessage(userId, roomId, payload) {
   };
 }
 
-function updateProfile(userId, payload) {
-  ensureState();
-  const user = getUserById(userId);
+async function updateProfile(userId, payload) {
+  const user = await getUserById(userId);
   if (!user) {
     throw createError(404, '사용자를 찾을 수 없습니다.');
   }
 
-  if (payload.nickname && payload.nickname !== user.nickname && findUserByNickname(payload.nickname)) {
+  if (payload.nickname && payload.nickname !== user.nickname && (await findUserByNickname(payload.nickname))) {
     throw createError(400, '이미 사용 중인 닉네임입니다.');
   }
 
-  user.nickname = String(payload.nickname || user.nickname).trim();
-  user.department = String(payload.department || user.department).trim();
-  user.student_year = Number(payload.studentYear) || user.student_year;
-  user.bio = String(payload.bio || '').trim();
-  user.profile_image_url = payload.profileImageUrl || user.profile_image_url;
-  persist();
+  const updated = await one(
+    `update users
+        set nickname = $1, department = $2, student_year = $3, bio = $4, profile_image_url = $5
+      where id = $6
+      returning *`,
+    [
+      String(payload.nickname || user.nickname).trim(),
+      String(payload.department || user.department).trim(),
+      Number(payload.studentYear) || user.student_year,
+      String(payload.bio || '').trim(),
+      payload.profileImageUrl || user.profile_image_url,
+      Number(userId),
+    ]
+  );
 
-  return toUserSummary(user);
+  return toUserSummary(normalizeUser(updated));
 }
 
-function registerUser(payload) {
-  ensureState();
-  ensureVerifiedEmail(payload.email);
+async function registerUser(payload) {
+  await ensureVerifiedEmail(payload.email);
 
-  if (findUserByEmail(payload.email)) {
-    throw createError(400, '이미 등록된 이메일입니다.');
-  }
-  if (findUserByUsername(payload.username)) {
-    throw createError(400, '이미 사용 중인 아이디입니다.');
-  }
-  if (findUserByNickname(payload.nickname)) {
-    throw createError(400, '이미 사용 중인 닉네임입니다.');
-  }
+  if (await findUserByEmail(payload.email)) throw createError(400, '이미 등록된 이메일입니다.');
+  if (await findUserByUsername(payload.username)) throw createError(400, '이미 사용 중인 아이디입니다.');
+  if (await findUserByNickname(payload.nickname)) throw createError(400, '이미 사용 중인 닉네임입니다.');
 
-  const user = {
-    id: nextId('users'),
-    email: String(payload.email).trim().toLowerCase(),
-    username: String(payload.username).trim(),
-    password: String(payload.password),
-    nickname: String(payload.nickname).trim(),
-    department: String(payload.department || '자유전공학부').trim(),
-    student_year: Number(payload.studentYear) || 1,
-    bio: '호랭마켓에 새로 합류했어요.',
-    profile_image_url: payload.profileImageUrl || '',
-    manner_score: 36.5,
-    created_at: nowIso(),
-  };
+  const user = normalizeUser(
+    await one(
+      `insert into users
+       (email, username, password, nickname, department, student_year, bio, profile_image_url, manner_score, created_at)
+       values ($1, $2, $3, $4, $5, $6, $7, $8, 36.5, $9)
+       returning *`,
+      [
+        String(payload.email).trim().toLowerCase(),
+        String(payload.username).trim(),
+        String(payload.password),
+        String(payload.nickname).trim(),
+        String(payload.department || '자유전공학부').trim(),
+        Number(payload.studentYear) || 1,
+        '호랭마켓에 새로 합류했어요.',
+        payload.profileImageUrl || '',
+        nowIso(),
+      ]
+    )
+  );
 
-  state.users.push(user);
-  state.verification_codes = state.verification_codes.filter((item) => item.email !== user.email);
-  persist();
-
+  await deleteVerificationCode(user.email);
   return user;
 }
 
-function loginUser(username, password) {
-  ensureState();
-  const user = findUserByUsername(username);
-
+async function loginUser(username, password) {
+  const user = await findUserByUsername(username);
   if (!user || user.password !== password) {
     throw createError(401, '아이디 또는 비밀번호가 올바르지 않습니다.');
   }
@@ -936,50 +878,57 @@ function loginUser(username, password) {
   return user;
 }
 
-function getSchemaMetadata() {
-  ensureState();
+async function getSchemaMetadata() {
+  const counts = {};
+  for (const table of [
+    'users',
+    'posts',
+    'post_images',
+    'post_likes',
+    'comments',
+    'notifications',
+    'chat_rooms',
+    'messages',
+    'sessions',
+    'verification_codes',
+  ]) {
+    counts[table] = Number((await one(`select count(*)::int as count from ${table}`)).count);
+  }
+
   return {
     version: schemaVersion,
     sql: schemaSql,
-    tables: tableSchemas,
-    counts: {
-      users: state.users.length,
-      posts: state.posts.length,
-      post_images: state.post_images.length,
-      post_likes: state.post_likes.length,
-      comments: state.comments.length,
-      notifications: state.notifications.length,
-      chat_rooms: state.chat_rooms.length,
-      messages: state.messages.length,
-      sessions: state.sessions.length,
-      verification_codes: state.verification_codes.length,
-    },
+    storageType: 'supabase-postgres',
+    counts,
   };
 }
 
-function getHealth() {
-  ensureState();
-  const master = findUserByUsername('horangmaster');
+async function getHealth() {
+  const stats = await one(
+    `select
+      (select count(*)::int from posts) as post_count,
+      (select count(*)::int from users) as user_count`
+  );
+  const master = await findUserByUsername('horangmaster');
 
   return {
     ok: true,
     name: 'horang-market-api',
-    storageType: 'file-db',
+    storageType: 'supabase-postgres',
     schemaVersion,
-    masterAccount: {
-      username: master.username,
-      email: master.email,
-    },
-    postCount: state.posts.length,
-    userCount: state.users.length,
+    masterAccount: master
+      ? {
+          username: master.username,
+          email: master.email,
+        }
+      : null,
+    postCount: Number(stats.post_count),
+    userCount: Number(stats.user_count),
   };
 }
 
 module.exports = {
-  DATA_PATH,
   createError,
-  ensureState,
-  resetState,
   findUserByEmail,
   findUserByUsername,
   findUserByNickname,

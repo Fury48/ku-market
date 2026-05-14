@@ -3020,12 +3020,6 @@
       "user_id": 1,
       "persisted": true,
       "expires_at": "2026-06-12T01:30:55.605Z"
-    },
-    {
-      "token": "bbb69e399f1f9289aaf02c42be94514d0495668c34878309",
-      "user_id": 1,
-      "persisted": true,
-      "expires_at": "2026-06-13T01:34:30.103Z"
     }
   ],
   "verification_codes": [

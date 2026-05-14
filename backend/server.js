@@ -61,8 +61,9 @@ function buildExpiredCookie() {
 }
 
 function getRequestBaseUrl(req) {
+  const proto = req.headers['x-forwarded-proto'] || 'http';
   const host = req.headers.host || `127.0.0.1:${PORT}`;
-  return `http://${host}`;
+  return `${proto}://${host}`;
 }
 
 function compactPostImages(req, posts) {
@@ -84,9 +85,7 @@ function compactPostDetail(req, post) {
   return {
     ...post,
     coverImageUrl: post.coverImageUrl ? `${baseUrl}/api/posts/${post.id}/cover-image` : '',
-    images: post.images.map((imageUrl, index) => (
-      imageUrl ? `${baseUrl}/api/posts/${post.id}/images/${index}` : ''
-    )),
+    images: post.images.map((imageUrl, index) => (imageUrl ? `${baseUrl}/api/posts/${post.id}/images/${index}` : '')),
     author: {
       ...post.author,
       profileImageUrl: post.author.profileImageUrl ? `${baseUrl}/api/users/${post.author.id}/profile-image` : '',
@@ -103,7 +102,6 @@ function compactPostDetail(req, post) {
 
 function decodeDataUrl(dataUrl) {
   const match = String(dataUrl || '').match(/^data:([^,]*),(.*)$/s);
-
   if (!match) {
     return null;
   }
@@ -147,9 +145,9 @@ function sendImage(req, res, imageUrl) {
   res.end(decoded.body);
 }
 
-function requireUser(req) {
+async function requireUser(req) {
   const token = getSessionToken(req);
-  const user = getUserBySessionToken(token);
+  const user = await getUserBySessionToken(token);
 
   if (!user) {
     throw createError(401, '로그인이 필요합니다.');
@@ -174,38 +172,38 @@ async function handleRequest(req, res) {
   }
 
   if (req.method === 'GET' && pathname === '/api/health') {
-    sendJson(req, res, 200, getHealth());
+    sendJson(req, res, 200, await getHealth());
     return;
   }
 
   if (req.method === 'GET' && pathname === '/api/meta/schema') {
-    sendJson(req, res, 200, getSchemaMetadata());
+    sendJson(req, res, 200, await getSchemaMetadata());
     return;
   }
 
   if (req.method === 'GET' && pathname === '/api/auth/session') {
     const token = getSessionToken(req);
-    const user = getUserBySessionToken(token);
+    const user = await getUserBySessionToken(token);
     sendJson(req, res, 200, {
       user: user ? toUserSummary(user) : null,
-      stats: user ? getAccountStats(user.id) : null,
+      stats: user ? await getAccountStats(user.id) : null,
       token: token || null,
     });
     return;
   }
 
   if (req.method === 'GET' && pathname === '/api/auth/check/email') {
-    sendJson(req, res, 200, { taken: Boolean(findUserByEmail(url.searchParams.get('email') || '')) });
+    sendJson(req, res, 200, { taken: Boolean(await findUserByEmail(url.searchParams.get('email') || '')) });
     return;
   }
 
   if (req.method === 'GET' && pathname === '/api/auth/check/username') {
-    sendJson(req, res, 200, { taken: Boolean(findUserByUsername(url.searchParams.get('username') || '')) });
+    sendJson(req, res, 200, { taken: Boolean(await findUserByUsername(url.searchParams.get('username') || '')) });
     return;
   }
 
   if (req.method === 'GET' && pathname === '/api/auth/check/nickname') {
-    sendJson(req, res, 200, { taken: Boolean(findUserByNickname(url.searchParams.get('nickname') || '')) });
+    sendJson(req, res, 200, { taken: Boolean(await findUserByNickname(url.searchParams.get('nickname') || '')) });
     return;
   }
 
@@ -213,15 +211,15 @@ async function handleRequest(req, res) {
     const body = await readJson(req);
     validateSchoolEmail(body.email);
 
-    if (findUserByEmail(body.email)) {
+    if (await findUserByEmail(body.email)) {
       throw createError(400, '이미 등록된 이메일입니다.');
     }
 
-    const verificationCode = createVerificationCode(body.email);
+    const verificationCode = await createVerificationCode(body.email);
     try {
       await sendVerificationEmail(String(body.email).trim().toLowerCase(), verificationCode);
     } catch (error) {
-      deleteVerificationCode(body.email);
+      await deleteVerificationCode(body.email);
       throw createError(500, `인증번호 이메일 발송에 실패했습니다. ${error.message || '메일 설정을 확인해 주세요.'}`);
     }
 
@@ -231,7 +229,7 @@ async function handleRequest(req, res) {
 
   if (req.method === 'POST' && pathname === '/api/auth/verify-code') {
     const body = await readJson(req);
-    verifyCode(body.email, body.code);
+    await verifyCode(body.email, body.code);
     sendJson(req, res, 200, { ok: true });
     return;
   }
@@ -240,24 +238,18 @@ async function handleRequest(req, res) {
     const body = await readJson(req);
     validateSchoolEmail(body.email);
 
-    const user = registerUser(body);
-    const token = createSession(user.id, true);
+    const user = await registerUser(body);
+    const token = await createSession(user.id, true);
 
-    sendJson(
-      req,
-      res,
-      201,
-      { user: toUserSummary(user), token },
-      { 'Set-Cookie': buildSessionCookie(token) }
-    );
+    sendJson(req, res, 201, { user: toUserSummary(user), token }, { 'Set-Cookie': buildSessionCookie(token) });
     return;
   }
 
   if (req.method === 'POST' && pathname === '/api/auth/login') {
     const body = await readJson(req);
-    const user = loginUser(body.username, body.password);
+    const user = await loginUser(body.username, body.password);
     const keepLoggedIn = Boolean(body.keepLoggedIn);
-    const token = createSession(user.id, keepLoggedIn);
+    const token = await createSession(user.id, keepLoggedIn);
 
     sendJson(
       req,
@@ -270,14 +262,14 @@ async function handleRequest(req, res) {
   }
 
   if (req.method === 'POST' && pathname === '/api/auth/logout') {
-    deleteSession(getSessionToken(req));
+    await deleteSession(getSessionToken(req));
     sendJson(req, res, 200, { ok: true }, { 'Set-Cookie': buildExpiredCookie() });
     return;
   }
 
   if (req.method === 'GET' && pathname === '/api/feed') {
-    const viewer = getUserBySessionToken(getSessionToken(req));
-    const posts = getFeed({
+    const viewer = await getUserBySessionToken(getSessionToken(req));
+    const posts = await getFeed({
       viewerId: viewer?.id ?? null,
       board: url.searchParams.get('board') || 'main',
       type: url.searchParams.get('type') || null,
@@ -289,58 +281,58 @@ async function handleRequest(req, res) {
   }
 
   if (req.method === 'GET' && pathname === '/api/account/liked') {
-    const { user } = requireUser(req);
-    sendJson(req, res, 200, { posts: compactPostImages(req, getLikedPosts(user.id)) });
+    const { user } = await requireUser(req);
+    sendJson(req, res, 200, { posts: compactPostImages(req, await getLikedPosts(user.id)) });
     return;
   }
 
   if (req.method === 'GET' && pathname === '/api/account/posts') {
-    const { user } = requireUser(req);
-    sendJson(req, res, 200, { posts: compactPostImages(req, getMyPosts(user.id)) });
+    const { user } = await requireUser(req);
+    sendJson(req, res, 200, { posts: compactPostImages(req, await getMyPosts(user.id)) });
     return;
   }
 
   if (req.method === 'GET' && pathname === '/api/notifications') {
-    const { user } = requireUser(req);
-    sendJson(req, res, 200, getNotifications(user.id));
+    const { user } = await requireUser(req);
+    sendJson(req, res, 200, await getNotifications(user.id));
     return;
   }
 
   if (req.method === 'POST' && pathname === '/api/notifications/read') {
-    const { user } = requireUser(req);
-    sendJson(req, res, 200, markNotificationsRead(user.id));
+    const { user } = await requireUser(req);
+    sendJson(req, res, 200, await markNotificationsRead(user.id));
     return;
   }
 
   if (req.method === 'PATCH' && pathname === '/api/account/profile') {
-    const { user } = requireUser(req);
+    const { user } = await requireUser(req);
     const body = await readJson(req);
-    sendJson(req, res, 200, { user: updateProfile(user.id, body) });
+    sendJson(req, res, 200, { user: await updateProfile(user.id, body) });
     return;
   }
 
   if (req.method === 'POST' && pathname === '/api/posts') {
-    const { user } = requireUser(req);
+    const { user } = await requireUser(req);
     const body = await readJson(req);
-    sendJson(req, res, 201, { post: compactPostDetail(req, createPost(user.id, body)) });
+    sendJson(req, res, 201, { post: compactPostDetail(req, await createPost(user.id, body)) });
     return;
   }
 
   const coverImageMatch = pathname.match(/^\/api\/posts\/(\d+)\/cover-image$/);
   if (coverImageMatch && req.method === 'GET') {
-    sendImage(req, res, getPostCoverImage(Number(coverImageMatch[1])));
+    sendImage(req, res, await getPostCoverImage(Number(coverImageMatch[1])));
     return;
   }
 
   const postImageMatch = pathname.match(/^\/api\/posts\/(\d+)\/images\/(\d+)$/);
   if (postImageMatch && req.method === 'GET') {
-    sendImage(req, res, getPostImage(Number(postImageMatch[1]), Number(postImageMatch[2])));
+    sendImage(req, res, await getPostImage(Number(postImageMatch[1]), Number(postImageMatch[2])));
     return;
   }
 
   const profileImageMatch = pathname.match(/^\/api\/users\/(\d+)\/profile-image$/);
   if (profileImageMatch && req.method === 'GET') {
-    sendImage(req, res, getUserProfileImage(Number(profileImageMatch[1])));
+    sendImage(req, res, await getUserProfileImage(Number(profileImageMatch[1])));
     return;
   }
 
@@ -349,8 +341,8 @@ async function handleRequest(req, res) {
     const postId = Number(postMatch[1]);
 
     if (req.method === 'GET') {
-      const viewer = getUserBySessionToken(getSessionToken(req));
-      const post = getPostDetail(postId, viewer?.id ?? null);
+      const viewer = await getUserBySessionToken(getSessionToken(req));
+      const post = await getPostDetail(postId, viewer?.id ?? null);
       sendJson(req, res, 200, {
         post: url.searchParams.get('includeImageData') === '1' ? post : compactPostDetail(req, post),
       });
@@ -358,15 +350,15 @@ async function handleRequest(req, res) {
     }
 
     if (req.method === 'PATCH') {
-      const { user } = requireUser(req);
+      const { user } = await requireUser(req);
       const body = await readJson(req);
-      sendJson(req, res, 200, { post: compactPostDetail(req, updatePost(user.id, postId, body)) });
+      sendJson(req, res, 200, { post: compactPostDetail(req, await updatePost(user.id, postId, body)) });
       return;
     }
 
     if (req.method === 'DELETE') {
-      const { user } = requireUser(req);
-      deletePost(user.id, postId);
+      const { user } = await requireUser(req);
+      await deletePost(user.id, postId);
       sendJson(req, res, 200, { ok: true });
       return;
     }
@@ -374,50 +366,54 @@ async function handleRequest(req, res) {
 
   const likeMatch = pathname.match(/^\/api\/posts\/(\d+)\/like$/);
   if (likeMatch && req.method === 'POST') {
-    const { user } = requireUser(req);
-    sendJson(req, res, 200, { post: compactPostDetail(req, toggleLike(user.id, Number(likeMatch[1]))) });
+    const { user } = await requireUser(req);
+    sendJson(req, res, 200, { post: compactPostDetail(req, await toggleLike(user.id, Number(likeMatch[1]))) });
     return;
   }
 
   const commentMatch = pathname.match(/^\/api\/posts\/(\d+)\/comments$/);
   if (commentMatch && req.method === 'POST') {
-    const { user } = requireUser(req);
+    const { user } = await requireUser(req);
     const body = await readJson(req);
-    sendJson(req, res, 201, { post: compactPostDetail(req, addComment(user.id, Number(commentMatch[1]), body.content)) });
+    sendJson(req, res, 201, {
+      post: compactPostDetail(req, await addComment(user.id, Number(commentMatch[1]), body.content)),
+    });
     return;
   }
 
   if (req.method === 'POST' && pathname === '/api/chats/open') {
-    const { user } = requireUser(req);
+    const { user } = await requireUser(req);
     const body = await readJson(req);
-    sendJson(req, res, 200, { roomId: openChatRoom(user.id, body.postId) });
+    sendJson(req, res, 200, { roomId: await openChatRoom(user.id, body.postId) });
     return;
   }
 
   if (req.method === 'GET' && pathname === '/api/chats') {
-    const { user } = requireUser(req);
-    sendJson(req, res, 200, { rooms: getChatRooms(user.id) });
+    const { user } = await requireUser(req);
+    sendJson(req, res, 200, { rooms: await getChatRooms(user.id) });
     return;
   }
 
   const chatMatch = pathname.match(/^\/api\/chats\/(\d+)$/);
   if (chatMatch && req.method === 'GET') {
-    const { user } = requireUser(req);
-    sendJson(req, res, 200, { room: getChatRoomDetail(user.id, Number(chatMatch[1])) });
+    const { user } = await requireUser(req);
+    sendJson(req, res, 200, { room: await getChatRoomDetail(user.id, Number(chatMatch[1])) });
     return;
   }
 
   const messageMatch = pathname.match(/^\/api\/chats\/(\d+)\/messages$/);
   if (messageMatch && req.method === 'GET') {
-    const { user } = requireUser(req);
-    sendJson(req, res, 200, { messages: getChatMessagesAfter(user.id, Number(messageMatch[1]), url.searchParams.get('afterId')) });
+    const { user } = await requireUser(req);
+    sendJson(req, res, 200, {
+      messages: await getChatMessagesAfter(user.id, Number(messageMatch[1]), url.searchParams.get('afterId')),
+    });
     return;
   }
 
   if (messageMatch && req.method === 'POST') {
-    const { user } = requireUser(req);
+    const { user } = await requireUser(req);
     const body = await readJson(req);
-    sendJson(req, res, 201, { message: createChatMessage(user.id, Number(messageMatch[1]), body) });
+    sendJson(req, res, 201, { message: await createChatMessage(user.id, Number(messageMatch[1]), body) });
     return;
   }
 
